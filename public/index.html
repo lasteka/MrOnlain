@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nagu studijas rezervācijas</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="auth-buttons" id="auth-buttons">
+            <button onclick="showLogin()">Pieteikties</button>
+            <button onclick="showRegister()">Reģistrēties</button>
+        </div>
+
+        <!-- Kalendāra solis -->
+        <div id="step-calendar" class="step">
+            <h2>Izvēlies datumu</h2>
+            <div id="calendar"></div>
+        </div>
+
+        <!-- Pakalpojumu solis -->
+        <div id="step-service" class="step hidden">
+            <h2>Izvēlies pakalpojumu</h2>
+            <select id="service-select" onchange="updateSelectedService()"></select>
+            <button onclick="nextStep('time')">Turpināt</button>
+            <button onclick="goBack()">Atpakaļ</button>
+        </div>
+        
+        
+        <!-- Laika izvēles solis -->
+        <div id="step-time" class="step hidden">
+            <h2>Izvēlies laiku</h2>
+            <div id="time-slots">
+                <!-- Laika slots tiks ģenerēts šeit -->Laika slots tiks ģenerēts šeit
+            </div>
+            <button onclick="nextStep('confirm')">Turpināt</button>
+            <button onclick="goBack()">Atpakaļ</button>
+        </div>
+
+        <!-- Apstiprināšanas solis -->
+        <div id="step-confirm" class="step hidden">
+            <h2>Apstiprini rezervāciju</h2>
+            <p>Datums: <span id="confirm-date"></span></p>
+            <p>Pakalpojums: <span id="confirm-service"></span></p>
+            <p>Laiks: <span id="confirm-time"></span></p>
+            <label>Vārds: <input type="text" id="confirm-name" required></label>
+            <label>Telefons: <input type="tel" id="confirm-phone" required></label>
+            <button onclick="submitAnonymousBooking()">Rezervēt</button>
+            <button onclick="goBack()">Atpakaļ</button>
+        </div>
+
+        <!-- Paldies solis -->
+        <div id="step-thankyou" class="step hidden">
+            <h2>Paldies par rezervāciju!</h2>
+            <button onclick="resetBooking()">Sākt no jauna</button>
+        </div>
+
+        <!-- Pieteikšanās forma -->
+        <div id="login-form" class="auth-form hidden">
+            <h2>Pieteikšanās</h2>
+            <label>E-pasts: <input type="email" id="login-email" required></label>
+            <label>Parole: <input type="password" id="login-password" required></label>
+            <button onclick="loginUser()">Pieteikties</button>
+            <button onclick="hideAuthForms()">Atcelt</button>
+        </div>
+
+        <!-- Reģistrācijas forma -->
+        <div id="register-form" class="auth-form hidden">
+            <h2>Reģistrācija</h2>
+            <label>Vārds: <input type="text" id="reg-name" required></label>
+            <label>Telefons: <input type="tel" id="reg-phone" required></label>
+            <label>E-pasts: <input type="email" id="reg-email" required></label>
+            <label>Parole: <input type="password" id="reg-password" required></label>
+            <button onclick="registerUser()">Reģistrēties</button>
+            <button onclick="hideAuthForms()">Atcelt</button>
+        </div>
+
+        <!-- Lietotāja rezervācijas -->
+        <div id="user-bookings" class="hidden">
+            <h2>Tavas rezervācijas</h2>
+            <div id="bookings-list"></div>
+            <button onclick="logoutUser()">Iziet</button>
+        </div>
+    </div>
+
+    <script src="./booking.js"></script>
+    <script src="./account.js"></script>
+</body>
+</html>

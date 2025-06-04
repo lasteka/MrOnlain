@@ -1,0 +1,71 @@
+/* /nails-booking/public/style.css */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.auth-buttons {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.step, .auth-form, #user-bookings {
+    display: none;
+}
+
+.step:not(.hidden), .auth-form:not(.hidden), #user-bookings:not(.hidden) {
+    display: block;
+}
+
+#calendar {
+    max-width: 900px;
+    margin: 20px auto;
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+}
+
+#calendar h3 {
+    grid-column: span 7;
+    text-align: center;
+}
+
+.calendar-nav {
+    grid-column: span 7;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.calendar-day {
+    padding: 10px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    background: #fff;
+    text-align: center;
+}
+
+.calendar-day:hover {
+    background: #e0e0e0;
+}
+
+.calendar-empty {
+    background: #f0f0f0;
+}
+
+#time-slots button {
+    margin: 5px;
+    padding: 10px;
+    cursor: pointer;
+}
+
+.booking {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin: 10px 0;
+}
+
+.booking img {
+    max-width: 100px;
+}
