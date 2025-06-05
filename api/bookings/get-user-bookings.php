@@ -13,33 +13,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 require_once __DIR__ . '/../../core/db.php';
 require_once __DIR__ . '/../../core/functions.php';
 
-$token = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-if (!$token || !str_starts_with($token, 'Bearer ')) {
-    sendError(401, 'Nav autorizēts');
-}
-
-$rawToken = substr($token, 7);
-$user = getUserByToken($pdo, $rawToken);
-$admin = getAdminByToken($pdo, $rawToken);
-
-if (!$user && !$admin) {
-    sendError(403, 'Nederīgs tokens');
+// Uzlabota Authorization galvenes iegūšana
+function getAuthorizationHeader() {
+    $headers = null;
+    
+    if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+        $headers = trim($_SERVER['HTTP_AUTHORIZATION']);
+    }
+    elseif (isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
+        $headers = trim($_SERVER['REDIRECT_HTTP_AUTHORIZATION']);
+    }
+    elseif (function_exists('getallheaders')) {
+        $requestHeaders = getallheaders();
+        if (isset($requestHeaders['Authorization'])) {
+            $headers = trim($requestHeaders['Authorization']);
+        } elseif (isset($requestHeaders['authorization'])) {
+            $headers = trim($requestHeaders['authorization']);
+        }
+    }
+    
+    return $headers;
 }
 
 try {
-    $query = 'SELECT b.*, u.name AS user_name FROM bookings b LEFT JOIN users u ON b.user_id = u.id';
-    $params = [];
-    if ($user) {
-        $query .= ' WHERE b.user_id = ?';
-        $params = [$user['id']];
+    $token = getAuthorizationHeader();
+    
+    // Debug izvade
+    error_log("Authorization header: " . ($token ? $token : 'nav atrasts'));
+    
+    if (!$token || !str_starts_with($token, 'Bearer ')) {
+        error_log("Token nav pareizs: " . ($token ? $token : 'nav'));
+        sendError(401, 'Nav autorizēts');
     }
-    $query .= ' ORDER BY b.date DESC';
 
-    $stmt = $pdo->prepare($query);
-    $stmt->execute($params);
+    $rawToken = substr($token, 7);
+    error_log("Raw token: " . $rawToken);
+
+    // Pārbauda lietotāju
+    $user = getUserByToken($pdo, $rawToken);
+    error_log("User found: " . ($user ? 'jā' : 'nē'));
+    
+    if (!$user) {
+        sendError(401, 'Nederīgs tokens');
+    }
+
+    // Iegūst lietotāja rezervācijas
+    $stmt = $pdo->prepare('SELECT * FROM bookings WHERE user_id = ? ORDER BY date DESC, time DESC');
+    $stmt->execute([$user['id']]);
     $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    error_log("Bookings count: " . count($bookings));
+    
     echo json_encode($bookings);
+
 } catch (PDOException $e) {
-    error_log('Kļūda ielādējot rezervācijas: ' . $e->getMessage());
+    error_log('Datubāzes kļūda get-user-bookings: ' . $e->getMessage());
+    sendError(500, 'Datubāzes kļūda');
+} catch (Exception $e) {
+    error_log('Vispārēja kļūda get-user-bookings: ' . $e->getMessage());
     sendError(500, 'Servera kļūda');
 }

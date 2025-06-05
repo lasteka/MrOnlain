@@ -1,4 +1,4 @@
-// /kursa-darbi/nails-booking/public/booking.js
+// nails-booking/public/booking.js
 let selectedDate = null;
 let selectedService = null;
 let selectedTime = null;
@@ -141,12 +141,15 @@ function loadAvailableTimes(date) {
         return;
     }
     
-    fetch(`api/bookings/get-availability.php?date=${encodeURIComponent(date)}`, {
+    // fetch(`api/bookings/get-availability.php?date=${encodeURIComponent(date)}`, {
+    fetch(`/api/bookings/get-availability.php?date=${encodeURIComponent(date)}`, {
         method: 'GET',
         headers: { 'Accept': 'application/json' }
     })
         .then(res => {
+
             if (!res.ok) {
+                // echo 'could';
                 return res.text().then(text => {
                     throw new Error(`HTTP kļūda: ${res.status} ${res.statusText}. Atbilde: ${text.substring(0, 100)}...`);
                 });
@@ -213,7 +216,7 @@ function submitAnonymousBooking() {
         comment: ''
     };
 
-    fetch('/kursa-darbi/nails-booking/api/bookings/submit-anonymous-booking.php', {
+    fetch('/api/bookings/submit-anonymous-booking.php', {
         method: 'POST',
         headers: { 
             'Content-Type': 'application/json',

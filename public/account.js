@@ -26,8 +26,16 @@ function registerUser() {
         alert('Lūdzu, aizpildi visus laukus.');
         return;
     }
+    if (!/^\+?\d{8,}$/.test(phone)) {
+        alert('Telefonam jābūt vismaz 8 cipariem (ar vai bez + priekšā)');
+        return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        alert('Lūdzu, ievadi derīgu e-pasta adresi.');
+        return;
+    }
 
-    fetch('/nails-booking/api/auth/register.php', {
+    fetch('/api/auth/register.php', {
         method: 'POST',
         headers: { 
             'Content-Type': 'application/json',
@@ -37,17 +45,29 @@ function registerUser() {
     })
         .then(res => {
             if (!res.ok) {
-                throw new Error(`HTTP kļūda: ${res.status} ${res.statusText}`);
+                return res.text().then(text => {
+                    throw new Error(`HTTP kļūda: ${res.status} ${res.statusText}. Atbilde: ${text}`);
+                });
             }
             return res.json();
         })
         .then(data => {
+            console.log('Reģistrācijas atbilde:', data); // Debug
             if (data.success && data.token) {
+                console.log('Saglabā token:', data.token); // Debug
                 localStorage.setItem('auth_token', data.token);
-                loadUserBookings();
-                document.getElementById('user-bookings').classList.remove('hidden');
-                document.getElementById('auth-buttons').classList.add('hidden');
-                hideAuthForms();
+                
+                // PIEVIENOTS: Pārbauda lietotāja lomu
+                if (data.role === 'admin') {
+                    window.location.href = '/nails-booking/admin/dashboard.html';
+                } else {
+                    // Parasti klients (role: 'client')
+                    console.log('Izsauc loadUserBookings()'); // Debug
+                    loadUserBookings();
+                    document.getElementById('user-bookings').classList.remove('hidden');
+                    document.getElementById('auth-buttons').classList.add('hidden');
+                    hideAuthForms();
+                }
             } else {
                 alert(data.error || 'Reģistrācija neizdevās.');
             }
@@ -67,7 +87,7 @@ function loginUser() {
         return;
     }
 
-    fetch('/nails-booking/api/auth/login.php', {
+    fetch('/api/auth/login.php', {
         method: 'POST',
         headers: { 
             'Content-Type': 'application/json',
@@ -111,7 +131,7 @@ function logoutUser() {
         return;
     }
 
-    fetch('/nails-booking/api/auth/logout.php', {
+    fetch('/api/auth/logout.php', {
         method: 'POST',
         headers: { 
             'Authorization': `Bearer ${token}`,
@@ -136,12 +156,16 @@ function logoutUser() {
 
 function loadUserBookings() {
     const token = localStorage.getItem('auth_token');
+    console.log('Token from localStorage:', token); // Debug
+    
     if (!token) {
+        console.log('Nav token - rāda login formu');
         showLogin();
         return;
     }
 
-    fetch('/nails-booking/api/bookings/get-user-bookings.php', {
+    console.log('Sūta pieprasījumu uz get-user-bookings.php'); // Debug
+    fetch('/api/bookings/get-user-bookings.php', {
         headers: { 
             'Authorization': `Bearer ${token}`,
             'Accept': 'application/json'
@@ -171,7 +195,7 @@ function loadUserBookings() {
                     <p><strong>Pakalpojums:</strong> ${booking.service}</p>
                     <p><strong>Laiks:</strong> ${booking.time}</p>
                     <p><strong>Komentārs:</strong> ${booking.comment || ''}</p>
-                    ${booking.image ? `<img src="/nails-booking/public/uploads/${booking.image}" width="100">` : ''}
+                    ${booking.image ? `<img src="/public/uploads/${booking.image}" width="100">` : ''}
                     <textarea placeholder="Pievienot komentāru" id="comment-${booking.id}"></textarea>
                     <input type="file" id="image-${booking.id}" accept="image/*">
                     <button onclick="updateBooking(${booking.id})">Labot</button>
@@ -195,7 +219,7 @@ function updateBooking(id) {
     formData.append('comment', comment || '');
     if (image) formData.append('image', image);
 
-    fetch('/nails-booking/api/bookings/update-booking.php', {
+    fetch('/api/bookings/update-booking.php', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` },
         body: formData
@@ -221,7 +245,7 @@ function updateBooking(id) {
 }
 
 function cancelBooking(id) {
-    fetch(`/nails-booking/api/bookings/delete-booking.php?id=${id}`, {
+    fetch(`/api/bookings/delete-booking.php?id=${id}`, {
         method: 'DELETE',
         headers: { 
             'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
@@ -251,7 +275,7 @@ function cancelBooking(id) {
 document.addEventListener('DOMContentLoaded', () => {
     const token = localStorage.getItem('auth_token');
     if (token) {
-        fetch('/nails-booking/api/auth/check-role.php', {
+        fetch('/api/auth/check-role.php', {  // Izņemts /nails-booking/ ceļš
             headers: { 
                 'Authorization': `Bearer ${token}`,
                 'Accept': 'application/json'
@@ -259,16 +283,19 @@ document.addEventListener('DOMContentLoaded', () => {
         })
             .then(res => {
                 if (!res.ok) {
+                    console.error(`HTTP kļūda: ${res.status} ${res.statusText}`);
                     throw new Error(`HTTP kļūda: ${res.status} ${res.statusText}`);
                 }
                 return res.json();
             })
             .then(data => {
+                console.log('Iegūtā loma:', data.role); // Debug izvade
                 if (data.role === 'admin') {
                     window.location.href = '/nails-booking/admin/dashboard.html';
                 } else if (data.role === 'client') {
                     loadUserBookings();
                 } else {
+                    console.error('Nezināma loma:', data.role);
                     localStorage.removeItem('auth_token');
                 }
             })

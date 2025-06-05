@@ -1,5 +1,5 @@
 <?php
-// /kursa-darbi/nails-booking/core/functions.php
+// /nails-booking/core/functions.php
 function sendError($code, $message) {
     header('Content-Type: application/json; charset=utf-8');
     http_response_code($code);
@@ -30,14 +30,35 @@ function generateToken() {
 }
 
 function getUserByToken($pdo, $token) {
-    $stmt = $pdo->prepare('SELECT id, email FROM users WHERE token = ?');
-    $stmt->execute([$token]);
-    return $stmt->fetch(PDO::FETCH_ASSOC);
+    try {
+        error_log("getUserByToken izsaukts ar token: " . $token); // Debug
+        
+        $stmt = $pdo->prepare('SELECT id, email FROM users WHERE token = ?');
+        $stmt->execute([$token]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        error_log("getUserByToken rezultāts: " . ($user ? json_encode($user) : 'nav atrasts')); // Debug
+        
+        return $user;
+    } catch (PDOException $e) {
+        error_log("getUserByToken kļūda: " . $e->getMessage());
+        return false;
+    }
 }
 
 function getAdminByToken($pdo, $token) {
-    $stmt = $pdo->prepare('SELECT id FROM admins WHERE token = ?');
-    $stmt->execute([$token]);
-    return $stmt->fetch(PDO::FETCH_ASSOC);
+    try {
+        error_log("getAdminByToken izsaukts ar token: " . $token); // Debug
+        
+        $stmt = $pdo->prepare('SELECT id FROM admins WHERE token = ?');
+        $stmt->execute([$token]);
+        $admin = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        error_log("getAdminByToken rezultāts: " . ($admin ? json_encode($admin) : 'nav atrasts')); // Debug
+        
+        return $admin;
+    } catch (PDOException $e) {
+        error_log("getAdminByToken kļūda: " . $e->getMessage());
+        return false;
+    }
 }
-?>
