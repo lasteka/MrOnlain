@@ -8,80 +8,150 @@
 </head>
 <body>
     <div class="container">
+        <!-- Autentifikācijas pogas augšējā labajā stūrī -->
         <div class="auth-buttons" id="auth-buttons">
-            <button onclick="showLogin()">Pieteikties</button>
-            <button onclick="showRegister()">Reģistrēties</button>
+            <button onclick="showLogin()" type="button">Pieteikties</button>
+            <button onclick="showRegister()" type="button">Reģistrēties</button>
+            <!-- Lietotāja pogas tiks izveidotas automātiski JavaScript -->
         </div>
 
-        <!-- Kalendāra solis -->
+        <!-- Galvenais kalendāra skats -->
         <div id="step-calendar" class="step">
-            <h2>Izvēlies datumu</h2>
+            <h2>💅 Izvēlies datumu rezervācijai</h2>
             <div id="calendar"></div>
         </div>
 
-        <!-- Pakalpojumu solis -->
+        <!-- Pakalpojumu izvēle -->
         <div id="step-service" class="step hidden">
-            <h2>Izvēlies pakalpojumu</h2>
-            <select id="service-select" onchange="updateSelectedService()"></select>
-            <button onclick="nextStep('time')">Turpināt</button>
-            <button onclick="goBack()">Atpakaļ</button>
-        </div>
-        
-        
-        <!-- Laika izvēles solis -->
-        <div id="step-time" class="step hidden">
-            <h2>Izvēlies laiku</h2>
-            <div id="time-slots">
-                <!-- Laika slo ts tiks ģenerēts šeit -->Laika slots tiks ģenerēts šeit
+            <h2>Pieejamie pakalpojumi <span id="selected-date"></span></h2>
+            <div id="services-list"></div>
+            <div class="step-navigation">
+                <button onclick="backToCalendar()" type="button">⬅️ Atpakaļ uz kalendāru</button>
             </div>
-                        <button onclick="goBack()">Atpakaļ</button>
-
-            <button onclick="nextStep('confirm')">Turpināt</button>
         </div>
 
-        <!-- Apstiprināšanas solis -->
+        <!-- Laika izvēle -->
+        <div id="step-time" class="step hidden">
+            <h2>🕐 Izvēlies laiku</h2>
+            <div class="booking-info">
+                <p><strong>📅 Datums:</strong> <span id="time-date"></span></p>
+                <p><strong>💅 Pakalpojums:</strong> <span id="time-service"></span></p>
+            </div>
+            <div id="time-slots"></div>
+            <div class="step-navigation">
+                <button onclick="goBackToServices()" type="button">⬅️ Atpakaļ</button>
+            </div>
+        </div>
+
+        <!-- Rezervācijas apstiprināšana -->
         <div id="step-confirm" class="step hidden">
-            <h2>Apstiprini rezervāciju</h2>
-            <p>Datums: <span id="confirm-date"></span></p>
-            <p>Pakalpojums: <span id="confirm-service"></span></p>
-            <p>Laiks: <span id="confirm-time"></span></p>
-            <label>Vārds: <input type="text" id="confirm-name" required></label>
-            <label>Telefons: <input type="tel" id="confirm-phone" required></label>
-            <button onclick="submitAnonymousBooking()">Rezervēt</button>
-            <button onclick="goBack()">Atpakaļ</button>
+            <h2>✅ Apstiprini rezervāciju</h2>
+            <div id="booking-summary"></div>
+            
+            <!-- Nereģistrētiem klientiem -->
+            <div id="guest-info" class="booking-form hidden">
+                <h3>👤 Tavs kontakti</h3>
+                <div class="form-group">
+                    <label for="guest-name">Vārds *</label>
+                    <input type="text" id="guest-name" required placeholder="Tavs vārds">
+                </div>
+                <div class="form-group">
+                    <label for="guest-phone">Telefons *</label>
+                    <input type="tel" id="guest-phone" required placeholder="+371 12345678">
+                </div>
+                <div class="form-group">
+                    <label for="guest-comment">Komentārs (nav obligāts)</label>
+                    <textarea id="guest-comment" placeholder="Papildu informācija..." rows="3"></textarea>
+                </div>
+            </div>
+            
+            <!-- Reģistrētiem klientiem -->
+            <div id="user-info" class="booking-form hidden">
+                <h3>📝 Papildu informācija</h3>
+                <div class="form-group">
+                    <label for="user-comment">Komentārs</label>
+                    <textarea id="user-comment" placeholder="Papildu informācija..." rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="user-image">📷 Pievienot bildi</label>
+                    <input type="file" id="user-image" accept="image/*">
+                </div>
+            </div>
+            
+            <div class="confirm-buttons">
+                <button onclick="confirmBooking()" id="confirm-btn" class="primary-btn" type="button">✅ Apstiprināt rezervāciju</button>
+                <button onclick="editBooking()" type="button">✏️ Labot</button>
+                <button onclick="cancelTempBooking()" type="button">❌ Atcelt</button>
+                <button onclick="goBackToTime()" type="button">⬅️ Atpakaļ</button>
+            </div>
         </div>
 
-        <!-- Paldies solis -->
+        <!-- Paldies ziņojums -->
         <div id="step-thankyou" class="step hidden">
-            <h2>Paldies par rezervāciju!</h2>
-            <button onclick="resetBooking()">Sākt no jauna</button>
+            <div class="thank-you-message">
+                <h2>🎉 Paldies par rezervāciju!</h2>
+                <p>✅ Tava rezervācija ir veiksmīgi apstiprināta.</p>
+                <p>📞 Mēs sazināsimies ar tevi tuvākajā laikā!</p>
+                <button onclick="resetBooking()" class="primary-btn" type="button">📅 Izveidot jaunu rezervāciju</button>
+            </div>
         </div>
 
         <!-- Pieteikšanās forma -->
         <div id="login-form" class="auth-form hidden">
-            <h2>Pieteikšanās</h2>
-            <label>E-pasts: <input type="email" id="login-email" required></label>
-            <label>Parole: <input type="password" id="login-password" required></label>
-            <button onclick="loginUser()">Pieteikties</button>
-            <button onclick="hideAuthForms()">Atcelt</button>
+            <div class="auth-form-content">
+                <h2>🔐 Pieteikšanās</h2>
+                <div class="form-group">
+                    <label for="login-email">E-pasts</label>
+                    <input type="email" id="login-email" required placeholder="tavs@epasts.lv">
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Parole</label>
+                    <input type="password" id="login-password" required placeholder="Tava parole">
+                </div>
+                <div class="form-buttons">
+                    <button onclick="loginUser()" class="primary-btn" type="button">🔑 Pieteikties</button>
+                    <button onclick="hideAuthForms()" type="button">❌ Atcelt</button>
+                </div>
+            </div>
         </div>
 
         <!-- Reģistrācijas forma -->
         <div id="register-form" class="auth-form hidden">
-            <h2>Reģistrācija</h2>
-            <label>Vārds: <input type="text" id="reg-name" required></label>
-            <label>Telefons: <input type="tel" id="reg-phone" required></label>
-            <label>E-pasts: <input type="email" id="reg-email" required></label>
-            <label>Parole: <input type="password" id="reg-password" required></label>
-            <button onclick="registerUser()">Reģistrēties</button>
-            <button onclick="hideAuthForms()">Atcelt</button>
+            <div class="auth-form-content">
+                <h2>📝 Reģistrācija</h2>
+                <div class="form-group">
+                    <label for="reg-name">Vārds</label>
+                    <input type="text" id="reg-name" required placeholder="Tavs vārds">
+                </div>
+                <div class="form-group">
+                    <label for="reg-phone">Telefons</label>
+                    <input type="tel" id="reg-phone" required placeholder="+371 12345678">
+                </div>
+                <div class="form-group">
+                    <label for="reg-email">E-pasts</label>
+                    <input type="email" id="reg-email" required placeholder="tavs@epasts.lv">
+                </div>
+                <div class="form-group">
+                    <label for="reg-password">Parole</label>
+                    <input type="password" id="reg-password" required placeholder="Izvēlies drošu paroli">
+                </div>
+                <div class="form-buttons">
+                    <button onclick="registerUser()" class="primary-btn" type="button">✨ Reģistrēties</button>
+                    <button onclick="hideAuthForms()" type="button">❌ Atcelt</button>
+                </div>
+            </div>
         </div>
 
         <!-- Lietotāja rezervācijas -->
         <div id="user-bookings" class="hidden">
-            <h2>Tavas rezervācijas</h2>
+            <div class="user-bookings-header">
+                <h2>📋 Manas rezervācijas</h2>
+                <p class="user-greeting">Sveiks, <span id="user-name-display"></span>! 👋</p>
+            </div>
             <div id="bookings-list"></div>
-            <button onclick="logoutUser()">Iziet</button>
+            <div class="user-bookings-footer">
+                <button onclick="backToCalendar()" class="primary-btn" type="button">📅 Atpakaļ uz kalendāru</button>
+            </div>
         </div>
     </div>
 

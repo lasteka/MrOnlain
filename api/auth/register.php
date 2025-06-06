@@ -59,10 +59,17 @@ try {
     $_SESSION['user_id'] = $pdo->lastInsertId();
 
     // PIEVIENOTS: role vērtība JSON atbildē
+   // Aizstājiet register.php beigās esošo echo ar šo:
     echo json_encode([
         'success' => true,
         'token' => $token,
-        'role' => 'client'  // Šī ir galvenā izmaiņa!
+        'role' => 'client',
+        'user' => [
+            'id' => $pdo->lastInsertId(),
+            'name' => $name,
+            'email' => $email,
+            'phone' => $phone
+        ]
     ]);
 
 } catch (PDOException $e) {

@@ -1,6 +1,6 @@
 <?php
-// /nails-booking/api/auth/check-role.php
-header('Content-Type: application/json');
+// /nails-booking/api/auth/check-role.php - izlabota versija
+header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: http://127.0.0.1');
 header('Access-Control-Allow-Methods: GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
@@ -42,33 +42,52 @@ function getAuthorizationHeader() {
 $token = getAuthorizationHeader();
 
 if (!$token || !str_starts_with($token, 'Bearer ')) {
+    error_log("DEBUG check-role - Token nav atrasts vai nav Bearer formātā: " . ($token ?: 'nav'));
     sendError(401, 'Nav autorizēts');
 }
 
 $rawToken = substr($token, 7); // Noņem "Bearer " no sākuma
+error_log("DEBUG check-role - Pārbauda token: " . substr($rawToken, 0, 10) . "...");
 
 try {
     // Pārbauda klientu
     $user = getUserByToken($pdo, $rawToken);
     if ($user) {
-        echo json_encode(['role' => 'client']);
+        error_log("DEBUG check-role - Klients atrasts: " . $user['name']);
+        echo json_encode([
+            'role' => 'client',
+            'user' => [
+                'id' => $user['id'],
+                'name' => $user['name'],
+                'email' => $user['email'],
+                'phone' => $user['phone']
+            ]
+        ]);
         exit;
     }
 
     // Pārbauda adminu
     $admin = getAdminByToken($pdo, $rawToken);
     if ($admin) {
-        echo json_encode(['role' => 'admin']);
+        error_log("DEBUG check-role - Admin atrasts");
+        echo json_encode([
+            'role' => 'admin',
+            'user' => [
+                'id' => $admin['id'],
+                'name' => $admin['name'] ?? 'Admin'
+            ]
+        ]);
         exit;
     }
 
+    error_log("DEBUG check-role - Nedz klients, nedz admin nav atrasts");
     sendError(401, 'Nederīgs tokens');
     
 } catch (PDOException $e) {
-    error_log('Check-role kļūda: ' . $e->getMessage());
+    error_log('DEBUG check-role - PDO kļūda: ' . $e->getMessage());
     sendError(500, 'Servera kļūda');
 } catch (Exception $e) {
-    error_log('Vispārēja check-role kļūda: ' . $e->getMessage());
+    error_log('DEBUG check-role - Vispārēja kļūda: ' . $e->getMessage());
     sendError(500, 'Servera kļūda');
 }
 ?>

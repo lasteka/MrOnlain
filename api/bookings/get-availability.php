@@ -1,5 +1,5 @@
 <?php
-// /kursa-darbi/nails-booking/api/bookings/get-availability.php
+// /api/bookings/get-availability.php - uzlabota versija
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: http://127.0.0.1');
 header('Access-Control-Allow-Methods: GET, OPTIONS');
@@ -19,15 +19,62 @@ if (!$date || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
 }
 
 try {
+    // Pārbauda vai datums nav pagātnē
+    $today = date('Y-m-d');
+    if ($date < $today) {
+        echo json_encode([]);
+        exit;
+    }
     
-    // Iegūstam darba laikus
+    // Pārbauda vai nav svētdiena (0 = svētdiena)
+    $dayOfWeek = date('w', strtotime($date));
+    if ($dayOfWeek == 0) { // Svētdiena
+        echo json_encode([]);
+        exit;
+    }
+    
+    // Iegūstam darba laikus no datubāzes
     $stmt = $pdo->prepare('SELECT start_time, end_time, is_available FROM working_hours WHERE date = ?');
     $stmt->execute([$date]);
     $hours = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if (!$hours || !$hours['is_available']) {
-        echo json_encode([]); // TUKSS masīvs, ja nav darba laika vai tas nav pieejams
+    // Ja nav ieraksta datubāzē, izmantos default darba laikus
+    if (!$hours) {
+        // Default darba laiki: P-Pk 9:00-18:00, Sestdiena 10:00-16:00
+        $defaultHours = [
+            1 => ['start' => '09:00:00', 'end' => '18:00:00'], // Pirmdiena
+            2 => ['start' => '09:00:00', 'end' => '18:00:00'], // Otrdiena
+            3 => ['start' => '09:00:00', 'end' => '18:00:00'], // Trešdiena
+            4 => ['start' => '09:00:00', 'end' => '18:00:00'], // Ceturtdiena
+            5 => ['start' => '09:00:00', 'end' => '18:00:00'], // Piektdiena
+            6 => ['start' => '10:00:00', 'end' => '16:00:00'], // Sestdiena
+            0 => null // Svētdiena - nav darba laika
+        ];
         
+        if (!isset($defaultHours[$dayOfWeek]) || $defaultHours[$dayOfWeek] === null) {
+            echo json_encode([]);
+            exit;
+        }
+        
+        $hours = [
+            'start_time' => $defaultHours[$dayOfWeek]['start'],
+            'end_time' => $defaultHours[$dayOfWeek]['end'],
+            'is_available' => 1
+        ];
+        
+        // Pēc izvēles: saglabā default laikus datubāzē
+        try {
+            $insertStmt = $pdo->prepare('INSERT INTO working_hours (date, start_time, end_time, is_available) VALUES (?, ?, ?, ?)');
+            $insertStmt->execute([$date, $hours['start_time'], $hours['end_time'], 1]);
+        } catch (PDOException $e) {
+            // Ignorē kļūdu, ja ieraksts jau eksistē
+            error_log('Neizdevās saglabāt default darba laikus: ' . $e->getMessage());
+        }
+    }
+
+    // Pārbauda vai darba laiks ir pieejams
+    if (!$hours['is_available']) {
+        echo json_encode([]);
         exit;
     }
 
@@ -49,7 +96,11 @@ try {
         }
     }
 
+    // Debug informācija (var izņemt production vidē)
+    error_log("Availability debug - Date: $date, Day: $dayOfWeek, Slots: " . count($slots));
+    
     echo json_encode($slots);
+    
 } catch (PDOException $e) {
     error_log('Kļūda ielādējot pieejamību: ' . $e->getMessage());
     sendError(500, 'Servera kļūda ielādējot laikus');

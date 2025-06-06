@@ -32,17 +32,31 @@ try {
     $stmt = $pdo->prepare('SELECT id, email, password_hash FROM users WHERE email = ?');
     $stmt->execute([$email]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
+   // Aizstājiet klienta sekciju login.php ar šo:
     if ($user && password_verify($password, $user['password_hash'])) {
+        // Iegūst pilnu lietotāja informāciju
+        $fullUserStmt = $pdo->prepare('SELECT id, name, email, phone FROM users WHERE id = ?');
+        $fullUserStmt->execute([$user['id']]);
+        $fullUser = $fullUserStmt->fetch(PDO::FETCH_ASSOC);
+        
         $token = generateToken();
         $pdo->prepare('UPDATE users SET token = ? WHERE id = ?')->execute([$token, $user['id']]);
         $_SESSION['user_id'] = $user['id'];
+        
         echo json_encode([
             'success' => true,
             'token' => $token,
-            'role' => 'client'
+            'role' => 'client',
+            'user' => [
+                'id' => $fullUser['id'],
+                'name' => $fullUser['name'],
+                'email' => $fullUser['email'],
+                'phone' => $fullUser['phone']
+            ]
         ]);
         exit;
     }
+    
 
     // Pārbauda adminu
     $stmt = $pdo->prepare('SELECT id, password_hash FROM admins WHERE email = ?');
