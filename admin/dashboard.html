@@ -2,16 +2,524 @@
 <html lang="lv">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Panelis</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💅 Admin Panelis - Nagu Studija</title>
+    <!-- Iekļauj admin stilus -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <h2>Admin Panelis</h2>
-        <button onclick="window.location.href='bookings.php'">Pārvaldīt rezervācijas</button>
-        <button onclick="window.location.href='services.php'">Pārvaldīt pakalpojumus</button>
-        <button onclick="window.location.href='calendar-view.php'">Pārvaldīt darba laikus</button>
-        <button onclick="window.location.href='logout.php'">Iziet</button>
+    <!-- Mobilās izvēlnes pārslēdzējs -->
+    <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">☰</button>
+
+    <!-- Kreisās puses navigācijas panelis -->
+    <div class="sidebar" id="sidebar">
+        <!-- Paneļa galvene ar logotipu -->
+        <div class="sidebar-header">
+            <h1>💅 Admin Panel</h1>
+            <p>Nagu Studijas Pārvaldība</p>
+        </div>
+        
+        <!-- Navigācijas izvēlne -->
+        <nav class="sidebar-nav">
+            <div class="nav-item">
+                <a href="#" class="nav-link active" data-section="dashboard">
+                    <span>📊</span> Kontrolpanelis
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="#" class="nav-link" data-section="bookings">
+                    <span>📅</span> Rezervācijas
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="#" class="nav-link" data-section="services">
+                    <span>💅</span> Pakalpojumi
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="#" class="nav-link" data-section="schedule">
+                    <span>🕐</span> Darba laiki
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="#" class="nav-link" data-section="clients">
+                    <span>👥</span> Klienti
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="#" class="nav-link" data-section="settings">
+                    <span>⚙️</span> Iestatījumi
+                </a>
+            </div>
+        </nav>
     </div>
+
+    <!-- Galvenais satura apgabals -->
+    <div class="main-content">
+        <!-- Lapas galvene ar virsrakstu un lietotāja info -->
+        <div class="content-header">
+            <h1 class="page-title" id="page-title">Kontrolpanelis</h1>
+            <div class="user-info">
+                <div class="user-avatar">A</div>
+                <span>Admin</span>
+                <button class="logout-btn" onclick="logout()">Iziet</button>
+            </div>
+        </div>
+
+        <!-- KONTROLPANEĻA SADAĻA -->
+        <div id="dashboard-section" class="section active">
+            <!-- Statistikas kartes -->
+            <div class="dashboard-grid">
+                <div class="stats-card">
+                    <h3>Rezervācijas šodien</h3>
+                    <div class="number" id="today-bookings">0</div>
+                    <div class="change positive">+3 no vakardienas</div>
+                </div>
+                <div class="stats-card">
+                    <h3>Kopā klienti</h3>
+                    <div class="number" id="total-clients">0</div>
+                    <div class="change positive">+15 šomēnes</div>
+                </div>
+                <div class="stats-card">
+                    <h3>Šīs nedēļas ieņēmumi</h3>
+                    <div class="number">€1,240</div>
+                    <div class="change positive">+8.2%</div>
+                </div>
+                <div class="stats-card">
+                    <h3>Aktīvie pakalpojumi</h3>
+                    <div class="number" id="active-services">0</div>
+                    <div class="change">Visi pieejami</div>
+                </div>
+            </div>
+
+            <!-- Ātro darbību pogas -->
+            <div class="quick-actions">
+                <a href="#" class="quick-action" onclick="showSection('bookings')">
+                    <span class="quick-action-icon">📅</span>
+                    <div class="quick-action-title">Pārvaldīt rezervācijas</div>
+                    <div class="quick-action-desc">Apskatīt un rediģēt rezervācijas</div>
+                </a>
+                <a href="#" class="quick-action" onclick="showAddServiceModal()">
+                    <span class="quick-action-icon">➕</span>
+                    <div class="quick-action-title">Pievienot pakalpojumu</div>
+                    <div class="quick-action-desc">Izveidot jaunu pakalpojumu</div>
+                </a>
+                <a href="#" class="quick-action" onclick="showSection('schedule')">
+                    <span class="quick-action-icon">🕐</span>
+                    <div class="quick-action-title">Iestatīt darba laikus</div>
+                    <div class="quick-action-desc">Pārvaldīt pieejamību</div>
+                </a>
+            </div>
+
+            <!-- Jaunāko rezervāciju tabula -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>📋 Jaunākās rezervācijas</h2>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Klients</th>
+                                    <th>Pakalpojums</th>
+                                    <th>Datums</th>
+                                    <th>Laiks</th>
+                                    <th>Statuss</th>
+                                    <th>Darbības</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-bookings">
+                                <!-- Jaunākās rezervācijas tiks ielādētas šeit -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAKALPOJUMU SADAĻA -->
+        <div id="services-section" class="section">
+            <div class="card">
+                <div class="card-header">
+                    <h2>💅 Pakalpojumi</h2>
+                </div>
+                <div class="card-body">
+                    <!-- Pievienošanas poga -->
+                    <button class="btn btn-primary" onclick="showAddServiceModal()">
+                        ➕ Pievienot pakalpojumu
+                    </button>
+                    
+                    <!-- Pakalpojumu tabula -->
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Nosaukums</th>
+                                    <th>Cena (EUR)</th>
+                                    <th>Ilgums (min)</th>
+                                    <th>Statuss</th>
+                                    <th>Darbības</th>
+                                </tr>
+                            </thead>
+                            <tbody id="services-list">
+                                <!-- Pakalpojumi tiks ielādēti šeit -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DARBA LAIKU SADAĻA -->
+        <div id="schedule-section" class="section">
+            <div class="card">
+                <div class="card-header">
+                    <h2>🕐 Darba laiku pārvaldība</h2>
+                </div>
+                <div class="card-body">
+                    <!-- Pievienošanas poga -->
+                    <button class="btn btn-primary" onclick="showAddScheduleModal()">
+                        ➕ Pievienot darba laiku
+                    </button>
+                    
+                    <!-- Darba laiku tabula -->
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Datums</th>
+                                    <th>Sākuma laiks</th>
+                                    <th>Beigu laiks</th>
+                                    <th>Pieejams</th>
+                                    <th>Darbības</th>
+                                </tr>
+                            </thead>
+                            <tbody id="schedule-list">
+                                <!-- Darba laiki tiks ielādēti šeit -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KLIENTU SADAĻA -->
+        <div id="clients-section" class="section">
+            <div class="card">
+                <div class="card-header">
+                    <h2>👥 Klienti</h2>
+                </div>
+                <div class="card-body">
+                    <!-- Pievienošanas poga -->
+                    <button class="btn btn-primary" onclick="showAddClientModal()">
+                        ➕ Pievienot klientu
+                    </button>
+                    
+                    <!-- Klientu tabula -->
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Vārds</th>
+                                    <th>E-pasts</th>
+                                    <th>Telefons</th>
+                                    <th>Rezervācijas</th>
+                                    <th>Pēdējā vizīte</th>
+                                    <th>Darbības</th>
+                                </tr>
+                            </thead>
+                            <tbody id="clients-list">
+                                <!-- Klienti tiks ielādēti šeit -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- IESTATĪJUMU SADAĻA -->
+        <div id="settings-section" class="section">
+            <div class="card">
+                <div class="card-header">
+                    <h2>⚙️ Sistēmas iestatījumi</h2>
+                </div>
+                <div class="card-body">
+                    <!-- Iestatījumu forma -->
+                    <form id="settings-form">
+                        <div class="form-group">
+                            <label class="form-label">Studijas nosaukums</label>
+                            <input type="text" class="form-control" id="studio-name" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Kontakta telefons</label>
+                            <input type="tel" class="form-control" id="studio-phone" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">E-pasta adrese</label>
+                            <input type="email" class="form-control" id="studio-email" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Darba dienas</label>
+                            <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem;">
+                                <label><input type="checkbox" id="day-monday"> Pirmdiena</label>
+                                <label><input type="checkbox" id="day-tuesday"> Otrdiena</label>
+                                <label><input type="checkbox" id="day-wednesday"> Trešdiena</label>
+                                <label><input type="checkbox" id="day-thursday"> Ceturtdiena</label>
+                                <label><input type="checkbox" id="day-friday"> Piektdiena</label>
+                                <label><input type="checkbox" id="day-saturday"> Sestdiena</label>
+                                <label><input type="checkbox" id="day-sunday"> Svētdiena</label>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-success">💾 Saglabāt iestatījumus</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODĀLIE LOGI -->
+
+    <!-- Pakalpojuma pievienošanas modāls -->
+    <div id="add-service-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">➕ Pievienot pakalpojumu</h3>
+                <button class="close-btn" onclick="hideAddServiceModal()">&times;</button>
+            </div>
+            <form id="add-service-form">
+                <div class="form-group">
+                    <label class="form-label">Pakalpojuma nosaukums</label>
+                    <input type="text" class="form-control" id="service-name" required placeholder="Piemēram: Manikīrs">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Cena (EUR)</label>
+                    <input type="number" class="form-control" id="service-price" step="0.01" min="0" required placeholder="25.00">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Ilgums (minūtes)</label>
+                    <input type="number" class="form-control" id="service-duration" min="1" required placeholder="60">
+                </div>
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                    <button type="button" class="btn btn-secondary" onclick="hideAddServiceModal()">Atcelt</button>
+                    <button type="submit" class="btn btn-primary">➕ Pievienot</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Darba laika pievienošanas modāls -->
+    <div id="add-schedule-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">🕐 Pievienot darba laiku</h3>
+                <button class="close-btn" onclick="hideAddScheduleModal()">&times;</button>
+            </div>
+            <form id="add-schedule-form">
+                <div class="form-group">
+                    <label class="form-label">Datums</label>
+                    <input type="date" class="form-control" id="schedule-date" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Sākuma laiks</label>
+                    <input type="time" class="form-control" id="schedule-start" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Beigu laiks</label>
+                    <input type="time" class="form-control" id="schedule-end" required>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="schedule-available" checked>
+                        Pieejams rezervācijām
+                    </label>
+                </div>
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                    <button type="button" class="btn btn-secondary" onclick="hideAddScheduleModal()">Atcelt</button>
+                    <button type="submit" class="btn btn-primary">🕐 Pievienot</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Klienta pievienošanas modāls -->
+    <div id="add-client-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">👥 Pievienot klientu</h3>
+                <button class="close-btn" onclick="hideAddClientModal()">&times;</button>
+            </div>
+            <form id="add-client-form">
+                <div class="form-group">
+                    <label class="form-label">Vārds</label>
+                    <input type="text" class="form-control" id="client-name" required placeholder="Anna Kalniņa">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">E-pasts</label>
+                    <input type="email" class="form-control" id="client-email" required placeholder="anna@example.com">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Telefons</label>
+                    <input type="tel" class="form-control" id="client-phone" required placeholder="+371 12345678">
+                </div>
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                    <button type="button" class="btn btn-secondary" onclick="hideAddClientModal()">Atcelt</button>
+                    <button type="submit" class="btn btn-primary">👥 Pievienot</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Pakalpojuma rediģēšanas modāls -->
+    <div id="edit-service-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">✏️ Rediģēt pakalpojumu</h3>
+                <button class="close-btn" onclick="hideEditServiceModal()">&times;</button>
+            </div>
+            <form id="edit-service-form">
+                <input type="hidden" id="edit-service-id">
+                <div class="form-group">
+                    <label class="form-label">Pakalpojuma nosaukums</label>
+                    <input type="text" class="form-control" id="edit-service-name" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Cena (EUR)</label>
+                    <input type="number" class="form-control" id="edit-service-price" step="0.01" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Ilgums (minūtes)</label>
+                    <input type="number" class="form-control" id="edit-service-duration" min="1" required>
+                </div>
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                    <button type="button" class="btn btn-secondary" onclick="hideEditServiceModal()">Atcelt</button>
+                    <button type="submit" class="btn btn-primary">💾 Saglabāt</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Rezervācijas rediģēšanas modāls -->
+    <div id="edit-booking-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">✏️ Rediģēt rezervāciju</h3>
+                <button class="close-btn" onclick="hideEditBookingModal()">&times;</button>
+            </div>
+            <form id="edit-booking-form">
+                <input type="hidden" id="edit-booking-id">
+                <div class="form-group">
+                    <label class="form-label">Klients</label>
+                    <input type="text" class="form-control" id="edit-booking-client" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Telefons</label>
+                    <input type="tel" class="form-control" id="edit-booking-phone" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Pakalpojums</label>
+                    <select class="form-control" id="edit-booking-service" required>
+                        <option value="">Izvēlies pakalpojumu</option>
+                        <!-- Pakalpojumi tiks aizpildīti JavaScript -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Datums</label>
+                    <input type="date" class="form-control" id="edit-booking-date" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Laiks</label>
+                    <input type="time" class="form-control" id="edit-booking-time" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Statuss</label>
+                    <select class="form-control" id="edit-booking-status" required>
+                        <option value="pending">Gaida</option>
+                        <option value="confirmed">Apstiprināts</option>
+                        <option value="cancelled">Atcelts</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Komentārs</label>
+                    <textarea class="form-control" id="edit-booking-comment" rows="3" placeholder="Papildu informācija..."></textarea>
+                </div>
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                    <button type="button" class="btn btn-secondary" onclick="hideEditBookingModal()">Atcelt</button>
+                    <button type="submit" class="btn btn-primary">💾 Saglabāt</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Iekļauj admin JavaScript failu -->
+    <script src="admin.js"></script>
+    
+    <script>
+        // Papildu funkcijas modāļiem un navigācijai
+        
+        // Mobilās izvēlnes pārslēgšana
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('active');
+        }
+
+        // Rediģēšanas modāļu funkcijas
+        function showEditServiceModal(service) {
+            const modal = document.getElementById('edit-service-modal');
+            document.getElementById('edit-service-id').value = service.id;
+            document.getElementById('edit-service-name').value = service.name;
+            document.getElementById('edit-service-price').value = service.price;
+            document.getElementById('edit-service-duration').value = service.duration;
+            modal.classList.add('active');
+        }
+
+        function hideEditServiceModal() {
+            document.getElementById('edit-service-modal').classList.remove('active');
+        }
+
+        function showEditBookingModal(booking) {
+            const modal = document.getElementById('edit-booking-modal');
+            document.getElementById('edit-booking-id').value = booking.id;
+            document.getElementById('edit-booking-client').value = booking.clientName;
+            document.getElementById('edit-booking-phone').value = booking.clientPhone;
+            document.getElementById('edit-booking-service').value = booking.service;
+            document.getElementById('edit-booking-date').value = booking.date;
+            document.getElementById('edit-booking-time').value = booking.time;
+            document.getElementById('edit-booking-status').value = booking.status;
+            document.getElementById('edit-booking-comment').value = booking.comment || '';
+            
+            // Aizpilda pakalpojumu izvēlni
+            const serviceSelect = document.getElementById('edit-booking-service');
+            serviceSelect.innerHTML = '<option value="">Izvēlies pakalpojumu</option>';
+            // Šeit būtu jāielādē pakalpojumi no mockData vai API
+            
+            modal.classList.add('active');
+        }
+
+        function hideEditBookingModal() {
+            document.getElementById('edit-booking-modal').classList.remove('active');
+        }
+
+        // Funkciju eksportēšana globālajam scope
+        window.toggleMobileMenu = toggleMobileMenu;
+        window.showEditServiceModal = showEditServiceModal;
+        window.hideEditServiceModal = hideEditServiceModal;
+        window.showEditBookingModal = showEditBookingModal;
+        window.hideEditBookingModal = hideEditBookingModal;
+        
+        // CSS animāciju pievienošana
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
 </body>
 </html>

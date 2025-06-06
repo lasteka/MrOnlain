@@ -5,7 +5,7 @@ require_once __DIR__ . '/core/db.php';
 require_once __DIR__ . '/core/auth.php';
 
 if (!isAdminLoggedIn()) {
-    header('Location: /nails-booking/admin/login.php');
+    header('Location: /admin/login.php');
     exit;
 }
 
@@ -37,13 +37,13 @@ $hours = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <td><?= htmlspecialchars($hour['end_time']) ?></td>
                     <td><?= $hour['is_available'] ? 'Jā' : 'Nē' ?></td>
                     <td>
-                        <a href="/nails-booking/admin/actions.php?action=edit-hours&date=<?= $hour['date'] ?>">Rediģēt</a>
+                        <a href="/admin/actions.php?action=edit-hours&date=<?= $hour['date'] ?>">Rediģēt</a>
                     </td>
                 </tr>
             <?php endforeach; ?>
         </table>
-        <a href="/nails-booking/admin/actions.php?action=add-hours">Pievienot darba laiku</a>
-        <a href="/nails-booking/admin/dashboard.html">Atpakaļ</a>
+        <a href="/admin/actions.php?action=add-hours">Pievienot darba laiku</a>
+        <a href="/admin/dashboard.html">Atpakaļ</a>
     </div>
 </body>
 </html>
