@@ -1,11 +1,22 @@
 <?php
-// /nails-booking/api/auth/register.php
+// /api/auth/register.php - IZLABOTS ar pareizo CORS
 header('Content-Type: application/json; charset=utf-8');
 
-$allowedOrigins = ['http://127.0.0.1'];
+// IZLABOTS: Atļaut gan localhost, gan 127.0.0.1
+$allowedOrigins = [
+    'http://localhost', 
+    'http://127.0.0.1',
+    'http://localhost:80',
+    'http://127.0.0.1:80'
+];
+
 if (isset($_SERVER['HTTP_ORIGIN']) && in_array($_SERVER['HTTP_ORIGIN'], $allowedOrigins)) {
     header('Access-Control-Allow-Origin: ' . $_SERVER['HTTP_ORIGIN']);
+} else {
+    // Ja nav atrasts konkrētais origin, atļaut localhost
+    header('Access-Control-Allow-Origin: http://localhost');
 }
+
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
@@ -49,23 +60,32 @@ try {
         sendError(400, 'Šis e-pasts jau ir reģistrēts');
     }
 
+    // Pārbauda, vai telefons jau eksistē
+    $stmt = $pdo->prepare('SELECT id FROM users WHERE phone = ?');
+    $stmt->execute([$phone]);
+    if ($stmt->fetch()) {
+        sendError(400, 'Šis telefona numurs jau ir reģistrēts');
+    }
+
     $passwordHash = password_hash($password, PASSWORD_BCRYPT);
     $token = generateToken();
 
     $stmt = $pdo->prepare('INSERT INTO users (name, phone, email, password_hash, token) VALUES (?, ?, ?, ?, ?)');
     $stmt->execute([$name, $phone, $email, $passwordHash, $token]);
 
-    session_start();
-    $_SESSION['user_id'] = $pdo->lastInsertId();
+    $userId = $pdo->lastInsertId();
 
-    // PIEVIENOTS: role vērtība JSON atbildē
-   // Aizstājiet register.php beigās esošo echo ar šo:
+    // Startē session
+    session_start();
+    $_SESSION['user_id'] = $userId;
+
+    // Atgriež veiksmīgo atbildi
     echo json_encode([
         'success' => true,
         'token' => $token,
         'role' => 'client',
         'user' => [
-            'id' => $pdo->lastInsertId(),
+            'id' => $userId,
             'name' => $name,
             'email' => $email,
             'phone' => $phone
@@ -74,9 +94,9 @@ try {
 
 } catch (PDOException $e) {
     error_log('Reģistrācijas kļūda: ' . $e->getMessage());
-    sendError(500, 'Datubāzes kļūda');
+    sendError(500, 'Datubāzes kļūda: ' . $e->getMessage());
 } catch (Exception $e) {
     error_log('Vispārēja kļūda: ' . $e->getMessage());
-    sendError(500, 'Servera kļūda');
+    sendError(500, 'Servera kļūda: ' . $e->getMessage());
 }
 ?>

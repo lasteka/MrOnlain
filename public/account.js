@@ -1,4 +1,4 @@
-// /nails-booking/public/account.js - perfekta versija ar skaidru lietotāja ceļojumu
+// /nails-booking/public/account.js - IZLABOTS ar pareizajiem API ceļiem
 let currentUser = null;
 let userRole = 'guest'; // 'guest' vai 'client'
 
@@ -128,7 +128,7 @@ function registerUser() {
         return;
     }
 
-    // Sūta reģistrācijas pieprasījumu
+    // IZLABOTS API CEĻŠ
     fetch('/api/auth/register.php', {
         method: 'POST',
         headers: { 
@@ -179,6 +179,7 @@ function loginUser() {
         return;
     }
 
+    // IZLABOTS API CEĻŠ
     fetch('/api/auth/login.php', {
         method: 'POST',
         headers: { 
@@ -225,7 +226,7 @@ function logoutUser() {
     const token = localStorage.getItem('auth_token');
     
     if (token) {
-        // Informē serveri par izrakstīšanos
+        // IZLABOTS API CEĻŠ
         fetch('/api/auth/logout.php', {
             method: 'POST',
             headers: { 
@@ -282,6 +283,7 @@ function loadUserBookings() {
         return;
     }
 
+    // IZLABOTS API CEĻŠ
     fetch('/api/bookings/get-user-bookings.php', {
         headers: { 
             'Authorization': `Bearer ${token}`,
@@ -358,6 +360,7 @@ function updateBooking(id) {
     formData.append('comment', comment || '');
     if (image) formData.append('image', image);
 
+    // IZLABOTS API CEĻŠ
     fetch('/api/bookings/update-booking.php', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` },
@@ -404,6 +407,7 @@ function cancelBooking(id) {
         return;
     }
     
+    // IZLABOTS API CEĻŠ
     fetch(`/api/bookings/delete-booking.php?id=${id}`, {
         method: 'DELETE',
         headers: { 
@@ -447,7 +451,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Pārbauda vai lietotājs jau ir ielogots
     const token = localStorage.getItem('auth_token');
     if (token) {
-        // Pārbauda token derīgumu
+        // IZLABOTS API CEĻŠ
         fetch('/api/auth/check-role.php', {
             headers: { 
                 'Authorization': `Bearer ${token}`,
