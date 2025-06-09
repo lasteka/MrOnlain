@@ -1,11 +1,12 @@
 <?php
-// /nails-booking/admin/services.php
+// /admin/services.php
+
 session_start();
 require_once __DIR__ . '/../core/db.php';
 require_once __DIR__ . '/../core/auth.php';
 
 if (!isAdminLoggedIn()) {
-    header('Location: /nails-booking/admin/login.php');
+    header('Location: /admin/login.php');
     exit;
 }
 
@@ -35,14 +36,14 @@ $services = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <td><?= htmlspecialchars($service['price']) ?></td>
                     <td><?= htmlspecialchars($service['duration']) ?></td>
                     <td>
-                        <a href="/nails-booking/admin/edit-service.php?id=<?= $service['id'] ?>">Rediģēt</a>
-                        <a href="/nails-booking/api/admin/manage-services.php?action=delete&id=<?= $service['id'] ?>" onclick="return confirm('Vai tiešām dzēst?')">Dzēst</a>
+                        <a href="/admin/edit-service.php?id=<?= $service['id'] ?>">Rediģēt</a>
+                        <a href="/api/admin/manage-services.php?action=delete&id=<?= $service['id'] ?>" onclick="return confirm('Vai tiešām dzēst?')">Dzēst</a>
                     </td>
                 </tr>
             <?php endforeach; ?>
         </table>
-        <a href="/nails-booking/admin/actions.php?action=add-service">Pievienot pakalpojumu</a>
-        <a href="/nails-booking/admin/dashboard.html">Atpakaļ</a>
+        <a href="/admin/actions.php?action=add-service">Pievienot pakalpojumu</a>
+        <a href="/admin/dashboard.html">Atpakaļ</a>
     </div>
 </body>
 </html>

@@ -1,4 +1,4 @@
-/nails-booking/
+
 │
 ├── /public/
 │   ├── index.html                  <-- Galvenā rezervācijas lapa (ar kalendāru)
@@ -177,7 +177,7 @@
 
 
 ------------------
--- /nails-booking/sql/update_database.sql
+-- /sql/update_database.sql
 -- Salīdzinājums un atjaunināšana starp esošo un jauno struktūru
 
 -- ====================

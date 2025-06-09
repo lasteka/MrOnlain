@@ -1,4 +1,4 @@
-// nails-booking/public/booking.js - strādājoša versija
+// nails-booking/public/booking.js - PILNA VERSIJA ar pakalpojuma ilguma atbalstu
 let selectedDate = null;
 let selectedService = null;
 let selectedTime = null;
@@ -228,7 +228,8 @@ function loadAvailableTimes(date, service) {
     console.log('🔍 Ielādē laikus datumam:', date);
     console.log('🔍 Pakalpojums:', service);
     
-    const url = `/api/bookings/get-availability.php?date=${encodeURIComponent(date)}`;
+    // IZLABOTS: Sūta pakalpojuma nosaukumu lai ņemtu vērā ilgumu
+    const url = `/api/bookings/get-availability.php?date=${encodeURIComponent(date)}&service=${encodeURIComponent(service || '')}`;
     console.log('🔍 Request URL:', url);
     
     fetch(url, {
@@ -267,7 +268,8 @@ function loadAvailableTimes(date, service) {
                         <p>❌ Nav pieejamu laiku šim datumam.</p>
                         <p style="font-size: 14px; color: #6c757d;">
                             Datums: ${date}<br>
-                            Mēģini izvēlēties citu datumu.
+                            Pakalpojums: ${service || 'Nav izvēlēts'}<br>
+                            Mēģini izvēlēties citu datumu vai pakalpojumu.
                         </p>
                     </div>
                 `;
@@ -300,9 +302,10 @@ function loadAvailableTimes(date, service) {
                     <p>❌ Neizdevās ielādēt pieejamos laikus.</p>
                     <p style="font-size: 14px; color: #6c757d;">
                         Kļūda: ${err.message}<br>
-                        Datums: ${date}
+                        Datums: ${date}<br>
+                        Pakalpojums: ${service || 'Nav izvēlēts'}
                     </p>
-                    <button onclick="loadAvailableTimes('${date}', '${service}')" style="margin-top: 10px;">
+                    <button onclick="loadAvailableTimes('${date}', '${service || ''}')" style="margin-top: 10px;">
                         🔄 Mēģināt vēlreiz
                     </button>
                 </div>

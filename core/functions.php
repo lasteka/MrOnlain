@@ -1,5 +1,5 @@
 <?php
-// /nails-booking/core/functions.php - izlabota versija
+// /core/functions.php - izlabota versija
 function sendError($code, $message) {
     header('Content-Type: application/json; charset=utf-8');
     http_response_code($code);

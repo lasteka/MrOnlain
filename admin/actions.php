@@ -1,11 +1,11 @@
 <?php
-// /nails-booking/admin/actions.php
+// /admin/actions.php
 session_start();
 require_once __DIR__ . '/../core/db.php';
 require_once __DIR__ . '/core/auth.php';
 
 if (!isAdminLoggedIn()) {
-    header('Location: /nails-booking/admin/login.php');
+    header('Location: /admin/login.php');
     exit;
 }
 
@@ -22,7 +22,7 @@ if ($action === 'add-service' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $stmt = $pdo->prepare('INSERT INTO services (name, price, duration) VALUES (?, ?, ?)');
         $stmt->execute([$name, $price, $duration]);
-        header('Location: /nails-booking/admin/services.php');
+        header('Location: /admin/services.php');
         exit;
     }
 }
@@ -38,7 +38,7 @@ if ($action === 'add-hours' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $stmt = $pdo->prepare('INSERT INTO working_hours (date, start_time, end_time, is_available) VALUES (?, ?, ?, ?)');
         $stmt->execute([$date, $start_time, $end_time, $is_available]);
-        header('Location: /nails-booking/admin/calendar-view.php');
+        header('Location: /admin/calendar-view.php');
         exit;
     }
 }
@@ -54,7 +54,7 @@ if ($action === 'edit-hours' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $stmt = $pdo->prepare('UPDATE working_hours SET start_time = ?, end_time = ?, is_available = ? WHERE date = ?');
         $stmt->execute([$start_time, $end_time, $is_available, $date]);
-        header('Location: /nails-booking/admin/calendar-view.php');
+        header('Location: /admin/calendar-view.php');
         exit;
     }
 }
@@ -88,7 +88,7 @@ if ($action === 'edit-hours' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 <button type="submit"><?php echo $action === 'add-hours' ? 'Pievienot' : 'Saglabāt'; ?></button>
             </form>
         <?php endif; ?>
-        <a href="<?php echo $action === 'add-service' ? '/nails-booking/admin/services.php' : '/nails-booking/admin/calendar-view.php'; ?>">Atpakaļ</a>
+        <a href="<?php echo $action === 'add-service' ? '/admin/services.php' : '/admin/calendar-view.php'; ?>">Atpakaļ</a>
     </div>
 </body>
 </html>

@@ -1,5 +1,5 @@
 <?php
-// /nails-booking/admin/calendar-view.php
+// /admin/calendar-view.php
 session_start();
 require_once __DIR__ . '/core/db.php';
 require_once __DIR__ . '/core/auth.php';

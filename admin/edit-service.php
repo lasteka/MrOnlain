@@ -1,11 +1,11 @@
 <?php
-// /nails-booking/admin/edit-service.php
+// /admin/edit-service.php
 session_start();
 require_once __DIR__ . '/../core/db.php';
 require_once __DIR__ . '/../core/auth.php';
 
 if (!isAdminLoggedIn()) {
-    header('Location: /nails-booking/admin/login.php');
+    header('Location: /admin/login.php');
     exit;
 }
 
@@ -15,7 +15,7 @@ $stmt->execute([$id]);
 $service = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$service) {
-    header('Location: /nails-booking/admin/services.php');
+    header('Location: /admin/services.php');
     exit;
 }
 
@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $stmt = $pdo->prepare('UPDATE services SET name = ?, price = ?, duration = ? WHERE id = ?');
         $stmt->execute([$name, $price, $duration, $id]);
-        header('Location: /nails-booking/admin/services.php');
+        header('Location: /admin/services.php');
         exit;
     }
 }
@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <label>Ilgums (min): <input type="number" name="duration" min="1" value="<?= htmlspecialchars($service['duration']) ?>" required></label>
             <button type="submit">Saglabāt</button>
         </form>
-        <a href="/nails-booking/admin/services.php">Atpaga</a>
+        <a href="/admin/services.php">Atpaga</a>
     </div>
 </body>
 </html>

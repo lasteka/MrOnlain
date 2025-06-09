@@ -1,7 +1,7 @@
 <?php
-// /api/bookings/get-availability.php - uzlabota versija
+// /api/bookings/get-availability.php - AR PAKALPOJUMA ILGUMA ŅEMŠANU VĒRĀ
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: http://127.0.0.1');
+header('Access-Control-Allow-Origin: http://localhost');
 header('Access-Control-Allow-Methods: GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
@@ -14,6 +14,8 @@ require_once __DIR__ . '/../../core/db.php';
 require_once __DIR__ . '/../../core/functions.php';
 
 $date = $_GET['date'] ?? '';
+$serviceName = $_GET['service'] ?? ''; // Pakalpojuma nosaukums (nav obligāts)
+
 if (!$date || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
     sendError(400, 'Nederīgs datuma formāts');
 }
@@ -40,7 +42,6 @@ try {
 
     // Ja nav ieraksta datubāzē, izmantos default darba laikus
     if (!$hours) {
-        // Default darba laiki: P-Pk 9:00-18:00, Sestdiena 10:00-16:00
         $defaultHours = [
             1 => ['start' => '09:00:00', 'end' => '18:00:00'], // Pirmdiena
             2 => ['start' => '09:00:00', 'end' => '18:00:00'], // Otrdiena
@@ -61,15 +62,6 @@ try {
             'end_time' => $defaultHours[$dayOfWeek]['end'],
             'is_available' => 1
         ];
-        
-        // Pēc izvēles: saglabā default laikus datubāzē
-        try {
-            $insertStmt = $pdo->prepare('INSERT INTO working_hours (date, start_time, end_time, is_available) VALUES (?, ?, ?, ?)');
-            $insertStmt->execute([$date, $hours['start_time'], $hours['end_time'], 1]);
-        } catch (PDOException $e) {
-            // Ignorē kļūdu, ja ieraksts jau eksistē
-            error_log('Neizdevās saglabāt default darba laikus: ' . $e->getMessage());
-        }
     }
 
     // Pārbauda vai darba laiks ir pieejams
@@ -78,10 +70,42 @@ try {
         exit;
     }
 
-    // Iegūstam aizņemtos laikus
-    $stmt = $pdo->prepare('SELECT time FROM bookings WHERE date = ?');
-    $stmt->execute([$date]);
-    $booked = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'time');
+    // UZLABOTS: Iegūstam aizņemtos laikus AR pakalpojuma ilgumu
+    $stmt = $pdo->prepare('
+        SELECT 
+            b.time,
+            s.duration,
+            TIME(b.time) as start_time,
+            TIME(DATE_ADD(CONCAT(?, " ", b.time), INTERVAL COALESCE(s.duration, 60) MINUTE)) as end_time
+        FROM bookings b
+        LEFT JOIN services s ON b.service = s.name
+        WHERE b.date = ?
+    ');
+    $stmt->execute([$date, $date]);
+    $bookedSlots = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Debug log
+    error_log("DEBUG get-availability - Date: $date");
+    error_log("DEBUG get-availability - Found " . count($bookedSlots) . " booked slots");
+    foreach ($bookedSlots as $slot) {
+        error_log("DEBUG get-availability - Booked: {$slot['start_time']} - {$slot['end_time']} (duration: {$slot['duration']}min)");
+    }
+
+    // Iegūstam izvēlētā pakalpojuma ilgumu (ja norādīts)
+    $selectedServiceDuration = 60; // Default 60 minūtes
+    if ($serviceName) {
+        $stmt = $pdo->prepare('SELECT duration FROM services WHERE name = ?');
+        $stmt->execute([$serviceName]);
+        $service = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($service) {
+            $selectedServiceDuration = $service['duration'];
+        }
+    }
+
+    // Funkcija lai pārbauda vai laika sloti pārklājas
+    function timeSlotsOverlap($start1, $end1, $start2, $end2) {
+        return ($start1 < $end2) && ($start2 < $end1);
+    }
 
     // Ģenerējam pieejamos laikus
     $start = strtotime($hours['start_time']);
@@ -90,18 +114,44 @@ try {
     $interval = 30 * 60; // 30 minūšu sloti
 
     for ($time = $start; $time < $end; $time += $interval) {
-        $timeStr = date('H:i', $time);
-        if (!in_array($timeStr, $booked)) {
-            $slots[] = ['time' => $timeStr];
+        $slotStartTime = date('H:i:s', $time);
+        $slotEndTime = date('H:i:s', $time + ($selectedServiceDuration * 60));
+        $slotDisplay = date('H:i', $time);
+        
+        // Pārbauda vai šis slots netraucē darba laiku
+        $slotEndTimestamp = $time + ($selectedServiceDuration * 60);
+        if ($slotEndTimestamp > strtotime($hours['end_time'])) {
+            error_log("DEBUG get-availability - Slot $slotDisplay extends beyond work hours, skipping");
+            continue;
+        }
+        
+        // Pārbauda vai šis slots nepārklājas ar esošajām rezervācijām
+        $isAvailable = true;
+        foreach ($bookedSlots as $bookedSlot) {
+            if (timeSlotsOverlap($slotStartTime, $slotEndTime, $bookedSlot['start_time'], $bookedSlot['end_time'])) {
+                $isAvailable = false;
+                error_log("DEBUG get-availability - Slot $slotDisplay conflicts with booking {$bookedSlot['start_time']}-{$bookedSlot['end_time']}, skipping");
+                break;
+            }
+        }
+        
+        if ($isAvailable) {
+            $slots[] = [
+                'time' => $slotDisplay,
+                'duration' => $selectedServiceDuration
+            ];
         }
     }
 
-    // Debug informācija (var izņemt production vidē)
-    error_log("Availability debug - Date: $date, Day: $dayOfWeek, Slots: " . count($slots));
+    error_log("DEBUG get-availability - Generated " . count($slots) . " available slots for {$selectedServiceDuration}min service");
     
     echo json_encode($slots);
     
 } catch (PDOException $e) {
     error_log('Kļūda ielādējot pieejamību: ' . $e->getMessage());
     sendError(500, 'Servera kļūda ielādējot laikus');
+} catch (Exception $e) {
+    error_log('Vispārēja kļūda get-availability: ' . $e->getMessage());
+    sendError(500, 'Servera kļūda');
 }
+?>

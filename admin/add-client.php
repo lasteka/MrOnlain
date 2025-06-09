@@ -1,12 +1,12 @@
 <?php
-// /nails-booking/admin/add-client.php
+// /admin/add-client.php
 session_start();
 require_once __DIR__ . '/../core/db.php';
 require_once __DIR__ . '/../core/auth.php';
 require_once __DIR__ . '/../core/functions.php';
 
 if (!isAdminLoggedIn()) {
-    header('Location: /nails-booking/admin/login.php');
+    header('Location: /admin/login.php');
     exit;
 }
 
@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $token = generateToken();
                 $stmt = $pdo->prepare('INSERT INTO users (name, phone, email, password_hash, token) VALUES (?, ?, ?, ?, ?)');
                 $stmt->execute([$name, $phone, $email, $passwordHash, $token]);
-                header('Location: /nails-booking/admin/dashboard.html');
+                header('Location: /admin/dashboard.html');
                 exit;
             }
         }
@@ -62,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <label>Parole: <input type="password" name="password" required></label>
             <button type="submit">Pievienot</button>
         </form>
-        <a href="/nails-booking/admin/dashboard.html">Atpakaļ</a>
+        <a href="/admin/dashboard.html">Atpakaļ</a>
     </div>
 </body>
 </html>

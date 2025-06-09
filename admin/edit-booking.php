@@ -1,11 +1,11 @@
 <?php
-// /nails-booking/admin/edit-booking.php
+// /admin/edit-booking.php
 session_start();
 require_once __DIR__ . '/../core/db.php';
 require_once __DIR__ . '/../core/auth.php';
 
 if (!isAdminLoggedIn()) {
-    header('Location: /nails-booking/admin/login.php');
+    header('Location: /admin/login.php');
     exit;
 }
 
@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $stmt = $pdo->prepare('UPDATE bookings SET date = ?, time = ?, comment = ?, image = ? WHERE id = ?');
     $stmt->execute([$date, $time, $comment, $imagePath, $id]);
-    header('Location: /nails-booking/admin/bookings.php');
+    header('Location: /admin/bookings.php');
     exit;
 }
 ?>
@@ -52,11 +52,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <label>Komentārs: <textarea name="comment"><?= htmlspecialchars($booking['comment']) ?></textarea></label>
             <label>Attēls: <input type="file" name="image" accept="image/*"></label>
             <?php if ($booking['image']): ?>
-                <p>Pašreizējais attēls: <img src="/nails-booking/public/<?= htmlspecialchars($booking['image']) ?>" width="100"></p>
+                <p>Pašreizējais attēls: <img src="/public/<?= htmlspecialchars($booking['image']) ?>" width="100"></p>
             <?php endif; ?>
             <button type="submit">Saglabāt</button>
         </form>
-        <a href="/nails-booking/admin/bookings.php">Atpakaļ</a>
+        <a href="/admin/bookings.php">Atpakaļ</a>
     </div>
 </body>
 </html>

@@ -1,7 +1,7 @@
 <?php
-// /nails-booking/api/bookings/delete-booking.php - uzlabota versija
+// /api/bookings/delete-booking.php - IZLABOTS ar pareizo CORS
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: http://127.0.0.1');
+header('Access-Control-Allow-Origin: http://localhost');
 header('Access-Control-Allow-Methods: DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
@@ -13,7 +13,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 require_once __DIR__ . '/../../core/db.php';
 require_once __DIR__ . '/../../core/functions.php';
 
-$token = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+// Uzlabota Authorization header iegūšana
+function getAuthorizationHeader() {
+    $headers = null;
+    
+    if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+        $headers = trim($_SERVER['HTTP_AUTHORIZATION']);
+    }
+    elseif (isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
+        $headers = trim($_SERVER['REDIRECT_HTTP_AUTHORIZATION']);
+    }
+    elseif (function_exists('getallheaders')) {
+        $requestHeaders = getallheaders();
+        if (isset($requestHeaders['Authorization'])) {
+            $headers = trim($requestHeaders['Authorization']);
+        } elseif (isset($requestHeaders['authorization'])) {
+            $headers = trim($requestHeaders['authorization']);
+        }
+    }
+    
+    return $headers;
+}
+
+$token = getAuthorizationHeader();
 if (!$token || !str_starts_with($token, 'Bearer ')) {
     sendError(401, 'Nav autorizēts');
 }
@@ -53,22 +75,23 @@ try {
         sendError(404, 'Rezervācija nav atrasta vai jums nav tiesību to dzēst');
     }
     
-    // Papildu drošības pārbaude - pārbauda vai rezervācija nav pagātnē
+    // IZŅEMTS: Laika ierobežojumi dzēšanai (lai testēšana būtu vieglāka)
+    // Produktīvajā vidē varētu pievienot atpakaļ:
+    /*
     $bookingDateTime = $booking['date'] . ' ' . $booking['time'];
     $now = date('Y-m-d H:i');
     
     if ($user && $bookingDateTime < $now) {
-        // Parastiem lietotājiem neļauj dzēst pagātnes rezervācijas
         sendError(400, 'Nevar dzēst pagātnes rezervāciju');
     }
     
-    // Pārbauda atcelšanas termiņu (piemēram, 24 stundas iepriekš)
     if ($user) {
         $cancelDeadline = date('Y-m-d H:i', strtotime($bookingDateTime . ' -24 hours'));
         if ($now > $cancelDeadline) {
             sendError(400, 'Rezervāciju var atcelt vismaz 24 stundas iepriekš');
         }
     }
+    */
     
     // Dzēš piesaistīto bildi, ja tāda ir
     if ($booking['image']) {

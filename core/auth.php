@@ -1,5 +1,5 @@
 <?php
-// /nails-booking/core/auth.php - Autentifikācijas funkcijas
+// /core/auth.php - Autentifikācijas funkcijas
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();

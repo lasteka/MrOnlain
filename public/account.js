@@ -1,4 +1,4 @@
-// /nails-booking/public/account.js - IZLABOTS ar pareizajiem API ceļiem
+// /public/account.js - IZLABOTS ar pareizajiem API ceļiem
 let currentUser = null;
 let userRole = 'guest'; // 'guest' vai 'client'
 
@@ -156,9 +156,9 @@ function registerUser() {
                 // Notīra formas laukus
                 clearForm('register');
                 
-                // Atgriež uz kalendāru ar lietotāja statusu
-                showCalendarView();
+                // Atgriež uz kalendāru ar lietotāja statusu  
                 alert(`🎉 Sveiks, ${name}! Reģistrācija veiksmīga!\n\n📅 Tagad vari izvēlēties datumu rezervācijai.\n👀 Tavs rezervācijas vēsturi varēsi redzēt pogā "Manas rezervācijas".`);
+                showCalendarView();
             } else {
                 alert('❌ ' + (data.error || 'Reģistrācija neizdevās.'));
             }

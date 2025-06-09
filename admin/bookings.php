@@ -8,10 +8,10 @@
 <body>
     <div class="container">
         <h2>Admin Panelis</h2>
-        <button onclick="window.location.href='/nails-booking/admin/bookings.php'">Pārvaldīt rezervācijas</button>
-        <button onclick="window.location.href='/nails-booking/admin/services.php'">Pārvaldīt pakalpojumus</button>
-        <button onclick="window.location.href='/nails-booking/admin/calendar-view.php'">Pārvaldīt darba laikus</button>
-        <button onclick="window.location.href='/nails-booking/admin/logout.php'">Iziet</button>
+        <button onclick="window.location.href='/admin/bookings.php'">Pārvaldīt rezervācijas</button>
+        <button onclick="window.location.href='/admin/services.php'">Pārvaldīt pakalpojumus</button>
+        <button onclick="window.location.href='/admin/calendar-view.php'">Pārvaldīt darba laikus</button>
+        <button onclick="window.location.href='/admin/logout.php'">Iziet</button>
     </div>
 </body>
 </html>
