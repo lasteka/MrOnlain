@@ -1,4 +1,4 @@
-// /public/account.js - IZLABOTS ar pareizajiem API ceļiem
+// /nails-booking/public/account.js - IZLABOTS ar pareizajiem API ceļiem
 let currentUser = null;
 let userRole = 'guest'; // 'guest' vai 'client'
 
@@ -237,20 +237,37 @@ function logoutUser() {
         .then(res => res.json())
         .then(data => {
             console.log('Logout response:', data);
+            if (data.success) {
+                // Notīrīt lokālos datus TIKAI ja servera logout izdodas
+                localStorage.removeItem('auth_token');
+                currentUser = null;
+                userRole = 'guest';
+                
+                // Atgriezties uz kalendāru
+                showCalendarView();
+                alert('👋 Tu esi veiksmīgi izrakstījies! Vari turpināt veikt rezervācijas kā viesis vai pierakstīties atpakaļ.');
+            } else {
+                alert('❌ Kļūda izrakstīšanās laikā: ' + (data.error || 'Nezināma kļūda'));
+            }
         })
         .catch(err => {
             console.error('Izrakstīšanās kļūda:', err);
+            // Pat ja servera logout neizdevās, notīram lokālos datus
+            localStorage.removeItem('auth_token');
+            currentUser = null;
+            userRole = 'guest';
+            showCalendarView();
+            alert('⚠️ Izrakstīšanās ar kļūdu, bet lokālie dati notīrīti.');
         });
     }
     
-    // Notīrīt lokālos datus
+    // IZLABOTS: Vienmēr notīra lokālos datus (nav atkarīgs no servera atbildes)
     localStorage.removeItem('auth_token');
     currentUser = null;
     userRole = 'guest';
     
     // Atgriezties uz kalendāru
     showCalendarView();
-    alert('👋 Tu esi veiksmīgi izrakstījies! Vari turpināt veikt rezervācijas kā viesis vai pierakstīties atpakaļ.');
 }
 
 // =================== LIETOTĀJA REZERVĀCIJAS ===================

@@ -1,4 +1,4 @@
-// nails-booking/public/booking.js - PILNA VERSIJA ar pakalpojuma ilguma atbalstu
+// nails-booking/public/booking.js - PILNĪBĀ IZLABOTS ar reschedule pārbaudi
 let selectedDate = null;
 let selectedService = null;
 let selectedTime = null;
@@ -8,6 +8,20 @@ let tempBookingData = {}; // Pagaidu rezervācijas dati localStorage
 let isRescheduling = false; // Vai pašlaik pārceļ rezervāciju
 
 const monthNames = ["Janvāris", "Februāris", "Marts", "Aprīlis", "Maijs", "Jūnijs", "Jūlijs", "Augusts", "Septembris", "Oktobris", "Novembris", "Decembris"];
+
+// SVARĪGI: Notīra reschedule ja nav ielogots
+function checkAndClearInvalidReschedule() {
+    const rescheduleId = localStorage.getItem('reschedule_booking_id');
+    const authToken = localStorage.getItem('auth_token');
+    
+    if (rescheduleId && !authToken) {
+        console.warn('⚠️ Atrasts reschedule ID bet nav auth token - notīra');
+        localStorage.removeItem('reschedule_booking_id');
+        isRescheduling = false;
+        return true; // Notīrīts
+    }
+    return false; // Nav notīrīts
+}
 
 function generateCalendar(year, month) {
     const calendarEl = document.getElementById('calendar');
@@ -91,13 +105,25 @@ function selectDate(dateStr) {
     localStorage.setItem('tempBookingData', JSON.stringify(tempBookingData));
     
     if (isRescheduling) {
-        // Pārcelšanas režīmā - iet tieši uz laika izvēli
+        // Pārbauda vai joprojām ir ielogots
+        const authToken = localStorage.getItem('auth_token');
+        if (!authToken) {
+            alert('❌ Sesija beigusies! Lūdzu pieteikties vēlreiz lai pārceltu rezervāciju.');
+            localStorage.removeItem('reschedule_booking_id');
+            isRescheduling = false;
+            if (typeof showLogin === 'function') {
+                showLogin();
+            }
+            return;
+        }
+        
+        // Pārcelšanas režīmā
         const rescheduleId = localStorage.getItem('reschedule_booking_id');
-        console.log('Pārceļ rezervāciju:', rescheduleId, 'uz datumu:', dateStr);
-        // Šeit varētu ielādēt esošo pakalpojumu, bet pagaidām iet uz pakalpojumu izvēli
+        console.log('📅 Pārceļ rezervāciju:', rescheduleId, 'uz datumu:', dateStr);
         nextStep('service');
     } else {
         // Parasta rezervācija
+        console.log('📅 Izvēlēts datums:', dateStr);
         nextStep('service');
     }
 }
@@ -176,7 +202,7 @@ function loadServices() {
             return res.json();
         })
         .then(data => {
-            console.log('Saņemtie pakalpojumi:', data);
+            console.log('📋 Saņemtie pakalpojumi:', data);
             const services = data.services || data || [];
             servicesList.innerHTML = '';
             
@@ -198,7 +224,7 @@ function loadServices() {
             });
         })
         .catch(err => {
-            console.error('Kļūda ielādējot pakalpojumus:', err);
+            console.error('❌ Kļūda ielādējot pakalpojumus:', err);
             servicesList.innerHTML = '<p>❌ Neizdevās ielādēt pakalpojumus. Lūdzu, mēģiniet vēlāk.</p>';
         });
 }
@@ -207,6 +233,7 @@ function selectService(serviceName) {
     selectedService = serviceName;
     tempBookingData.service = serviceName;
     localStorage.setItem('tempBookingData', JSON.stringify(tempBookingData));
+    console.log('💅 Izvēlēts pakalpojums:', serviceName);
     nextStep('time');
 }
 
@@ -224,11 +251,10 @@ function loadAvailableTimes(date, service) {
     
     timeSlotsEl.innerHTML = '<p>Ielādē pieejamos laikus...</p>';
     
-    // Debug - parāda kāds datums tiek sūtīts
     console.log('🔍 Ielādē laikus datumam:', date);
     console.log('🔍 Pakalpojums:', service);
     
-    // IZLABOTS: Sūta pakalpojuma nosaukumu lai ņemtu vērā ilgumu
+    // Sūta pakalpojuma nosaukumu lai ņemtu vērā ilgumu
     const url = `/api/bookings/get-availability.php?date=${encodeURIComponent(date)}&service=${encodeURIComponent(service || '')}`;
     console.log('🔍 Request URL:', url);
     
@@ -244,25 +270,19 @@ function loadAvailableTimes(date, service) {
             return res.json();
         })
         .then(times => {
-            console.log('🔍 Saņemtie laiki (pilns response):', times);
-            console.log('🔍 Laiku masīva tips:', typeof times);
-            console.log('🔍 Vai ir masīvs:', Array.isArray(times));
-            console.log('🔍 Masīva garums:', times ? times.length : 'nav masīvs');
-            
+            console.log('🔍 Saņemtie laiki:', times);
             timeSlotsEl.innerHTML = '';
             
-            // Pārbauda dažādus response formātus
+            // Pārbauda response formātu
             let timeSlots = times;
             if (times && times.times && Array.isArray(times.times)) {
                 timeSlots = times.times;
-                console.log('🔍 Izmanto times.times:', timeSlots);
             } else if (times && times.slots && Array.isArray(times.slots)) {
                 timeSlots = times.slots;
-                console.log('🔍 Izmanto times.slots:', timeSlots);
             }
             
             if (!timeSlots || !Array.isArray(timeSlots) || timeSlots.length === 0) {
-                console.warn('⚠️ Nav pieejamu laiku vai nepareizs formāts');
+                console.warn('⚠️ Nav pieejamu laiku');
                 timeSlotsEl.innerHTML = `
                     <div style="text-align: center; padding: 20px;">
                         <p>❌ Nav pieejamu laiku šim datumam.</p>
@@ -279,7 +299,6 @@ function loadAvailableTimes(date, service) {
             console.log('✅ Ģenerē laika slotus:', timeSlots.length, 'gabali');
             
             timeSlots.forEach((slot, index) => {
-                console.log(`🔍 Slot ${index}:`, slot);
                 const btn = document.createElement('button');
                 
                 // Dažādi formāti
@@ -318,7 +337,21 @@ function selectTime(time) {
     tempBookingData.time = time;
     localStorage.setItem('tempBookingData', JSON.stringify(tempBookingData));
     
+    console.log('🕐 Izvēlēts laiks:', time);
+    
     if (isRescheduling) {
+        // Pārbauda vai joprojām ir ielogots
+        const authToken = localStorage.getItem('auth_token');
+        if (!authToken) {
+            alert('❌ Sesija beigusies! Lūdzu pieteikties vēlreiz lai pārceltu rezervāciju.');
+            localStorage.removeItem('reschedule_booking_id');
+            isRescheduling = false;
+            if (typeof showLogin === 'function') {
+                showLogin();
+            }
+            return;
+        }
+        
         // Apstiprina pārcelšanu
         confirmReschedule();
     } else {
@@ -380,8 +413,9 @@ function showConfirmation() {
 
 function confirmBooking() {
     const token = localStorage.getItem('auth_token');
-    // Drošāka pārbaude
     const isLoggedIn = token && (typeof currentUser !== 'undefined' && currentUser);
+    
+    console.log('📤 Sāk rezervācijas procesu, ielogots:', isLoggedIn);
     
     if (isLoggedIn) {
         // Reģistrēts lietotājs
@@ -393,6 +427,8 @@ function confirmBooking() {
 }
 
 function submitAnonymousBooking() {
+    console.log('👤 Sūta anonīmo rezervāciju');
+    
     const name = document.getElementById('guest-name')?.value.trim();
     const phone = document.getElementById('guest-phone')?.value.trim();
     const comment = document.getElementById('guest-comment')?.value.trim();
@@ -416,6 +452,8 @@ function submitAnonymousBooking() {
         comment: comment || ''
     };
 
+    console.log('📤 Sūta uz submit-anonymous-booking.php:', booking);
+
     fetch('/api/bookings/submit-anonymous-booking.php', {
         method: 'POST',
         headers: { 
@@ -425,12 +463,14 @@ function submitAnonymousBooking() {
         body: JSON.stringify(booking)
     })
         .then(res => {
+            console.log('📥 Response status:', res.status);
             if (!res.ok) {
                 throw new Error(`HTTP kļūda: ${res.status} ${res.statusText}`);
             }
             return res.json();
         })
         .then(data => {
+            console.log('✅ Success response:', data);
             if (data.success) {
                 clearTempData();
                 nextStep('thankyou');
@@ -439,20 +479,18 @@ function submitAnonymousBooking() {
             }
         })
         .catch(err => {
-            console.error('Kļūda veicot rezervāciju:', err);
+            console.error('❌ Kļūda veicot rezervāciju:', err);
             alert('❌ Neizdevās veikt rezervāciju: ' + err.message);
         });
 }
 
 function submitRegisteredUserBooking() {
+    console.log('🔐 Sūta reģistrētā lietotāja rezervāciju');
+    
     const comment = document.getElementById('user-comment')?.value.trim();
     const image = document.getElementById('user-image')?.files[0];
     
-    // DEBUG - pārbauda token
     const token = localStorage.getItem('auth_token');
-    console.log('🔍 Token from localStorage:', token ? token.substring(0, 20) + '...' : 'NAV TOKEN');
-    console.log('🔍 currentUser:', currentUser);
-    
     if (!token) {
         alert('❌ Nav autorizācijas token! Lūdzu pieteikties vēlreiz.');
         if (typeof showLogin === 'function') {
@@ -466,17 +504,7 @@ function submitRegisteredUserBooking() {
     formData.append('service', selectedService);
     formData.append('time', selectedTime);
     formData.append('comment', comment || '');
-    formData.append('auth_token', token); // PIEVIENOJAM TOKEN KĀ FORM DATA
     if (image) formData.append('image', image);
-    
-    console.log('🔍 Sūta uz submit-booking.php:');
-    console.log('  - Date:', selectedDate);
-    console.log('  - Service:', selectedService);
-    console.log('  - Time:', selectedTime);
-    console.log('  - Comment:', comment);
-    console.log('  - Image:', image ? 'Jā (' + image.name + ')' : 'Nē');
-    console.log('  - Authorization header:', `Bearer ${token.substring(0, 20)}...`);
-    console.log('  - Token as FormData:', token.substring(0, 20) + '...');
 
     fetch('/api/bookings/submit-booking.php', {
         method: 'POST',
@@ -487,19 +515,17 @@ function submitRegisteredUserBooking() {
         body: formData
     })
         .then(res => {
-            console.log('🔍 Response status:', res.status);
-            console.log('🔍 Response headers:', res.headers);
-            
+            console.log('📥 Response status:', res.status);
             if (!res.ok) {
                 return res.text().then(text => {
-                    console.log('🔍 Error response body:', text);
+                    console.log('❌ Error response:', text);
                     throw new Error(`HTTP kļūda: ${res.status} ${res.statusText}`);
                 });
             }
             return res.json();
         })
         .then(data => {
-            console.log('🔍 Success response:', data);
+            console.log('✅ Success response:', data);
             if (data.success) {
                 clearTempData();
                 nextStep('thankyou');
@@ -547,7 +573,6 @@ function confirmReschedule() {
                 alert('✅ Rezervācija veiksmīgi pārcelta!');
                 localStorage.removeItem('reschedule_booking_id');
                 isRescheduling = false;
-                // Atgriež uz rezervāciju sarakstu
                 if (typeof showUserBookings === 'function') {
                     showUserBookings();
                 } else {
@@ -564,7 +589,6 @@ function confirmReschedule() {
 }
 
 function editBooking() {
-    // Atgriež uz pakalpojumu izvēli
     nextStep('service');
 }
 
@@ -588,11 +612,9 @@ function resetBooking() {
     isRescheduling = false;
     localStorage.removeItem('reschedule_booking_id');
     
-    // Atgriež uz kalendāru
     if (typeof showCalendarView === 'function') {
         showCalendarView();
     } else {
-        // Fallback - parāda kalendāra soli
         document.querySelectorAll('.step').forEach(el => el.classList.add('hidden'));
         const calendarStep = document.getElementById('step-calendar');
         if (calendarStep) {
@@ -607,7 +629,14 @@ function backToCalendar() {
 
 // Inicializācija
 document.addEventListener('DOMContentLoaded', () => {
-    // Atjauno datus no localStorage, ja tādi ir
+    console.log('🚀 Inicializē booking sistēmu');
+    
+    // SVARĪGI: Notīra nederīgo reschedule stāvokli
+    if (checkAndClearInvalidReschedule()) {
+        console.log('🧹 Notīrīts nederīgais reschedule stāvoklis');
+    }
+    
+    // Atjauno datus no localStorage
     const savedData = localStorage.getItem('tempBookingData');
     if (savedData) {
         try {
@@ -621,9 +650,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // Pārbauda vai ir pārcelšanas režīms
-    if (localStorage.getItem('reschedule_booking_id')) {
+    // Pārbauda derīgo pārcelšanas režīmu
+    const rescheduleId = localStorage.getItem('reschedule_booking_id');
+    const authToken = localStorage.getItem('auth_token');
+    
+    if (rescheduleId && authToken) {
         isRescheduling = true;
+        console.log('📅 Pārcelšanas režīms aktivizēts, ID:', rescheduleId);
     }
     
     // Ģenerē kalendāru
@@ -631,6 +664,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (calendarEl) {
         generateCalendar(currentYear, currentMonth);
     } else {
-        console.error('Kalendāra elements nav atrasts ielādes laikā!');
+        console.error('Kalendāra elements nav atrasts!');
     }
 });
