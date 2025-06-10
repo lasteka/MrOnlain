@@ -98,7 +98,17 @@ class AdminConfig {
         return !!token;
     }
     
-    // Novirza uz login lapu, ja nav autentificēts
+    // FIKSĒTS: Pievienojam requireAuth metodi
+    requireAuth() {
+        if (!this.isAuthenticated()) {
+            console.log('❌ Nav autentificēts - novirza uz login');
+            window.location.href = this.getAdminUrl('login.php');
+            return false;
+        }
+        return true;
+    }
+    
+    // FIKSĒTS: Pievienojam requireAuth metodi
     requireAuth() {
         if (!this.isAuthenticated()) {
             console.log('❌ Nav autentificēts - novirza uz login');
@@ -132,14 +142,32 @@ class AdminConfig {
 }
 
 // Globālā instance (tikai admin panelim)
-window.AdminConfig = new AdminConfig();
+try {
+    window.AdminConfig = new AdminConfig();
+    console.log('✅ AdminConfig veiksmīgi izveidots');
+} catch (error) {
+    console.error('❌ AdminConfig neizdevās izveidot:', error);
+}
 
 // Pārbauda autentifikāciju lapas ielādes laikā (izņemot login lapu)
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔄 DOM ielādēts, pārbauda autentifikāciju...');
+    
     const isLoginPage = window.location.pathname.includes('login.php');
+    console.log('📍 Login page check:', isLoginPage);
     
     if (!isLoginPage) {
-        AdminConfig.requireAuth();
+        // VIENKĀRŠS risinājums - tieši pārbauda localStorage
+        const token = localStorage.getItem('admin_token');
+        console.log('🔑 Admin token status:', token ? 'EXISTS' : 'MISSING');
+        
+        if (!token) {
+            console.log('❌ Nav admin token - novirza uz login');
+            window.location.href = '/admin/login.php';
+            return;
+        }
+        
+        console.log('✅ Token atrasts, turpina ielādi');
     }
     
     console.log('🔧 Admin Config gatavs. Pieejamās komandas:');

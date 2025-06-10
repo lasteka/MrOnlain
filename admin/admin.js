@@ -194,6 +194,87 @@ function editBooking(id) {
     showEditBookingModal(booking);
 }
 
+// FIKSĒTS: Pievienojam rezervācijas rediģēšanas funkciju
+function saveBookingChanges() {
+    const id = document.getElementById('edit-booking-id').value;
+    const client = document.getElementById('edit-booking-client').value.trim();
+    const phone = document.getElementById('edit-booking-phone').value.trim();
+    const service = document.getElementById('edit-booking-service').value;
+    const date = document.getElementById('edit-booking-date').value;
+    const time = document.getElementById('edit-booking-time').value;
+    const status = document.getElementById('edit-booking-status').value;
+    const comment = document.getElementById('edit-booking-comment').value.trim();
+
+    // DEBUG: Log input values
+    console.log('🔍 DEBUG - Booking values:', {
+        id, client, phone, service, date, time, status, comment,
+        timeType: typeof time,
+        timeLength: time.length
+    });
+
+    if (!client || !phone || !service || !date || !time) {
+        showAlert('danger', 'Visi lauki ir obligāti!');
+        return;
+    }
+
+    // Noņem sekundes no laika, ja tādas ir (13:12:00 -> 13:12)
+    let cleanTime = time;
+    if (time.length > 5 && time.includes(':')) {
+        cleanTime = time.substring(0, 5);
+        console.log(`🔧 Cleaned time from "${time}" to "${cleanTime}"`);
+    }
+
+    // Pārbauda laika formātu
+    const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+    if (!timeRegex.test(cleanTime)) {
+        console.error('❌ Invalid time format:', cleanTime);
+        showAlert('danger', `Nederīgs laika formāts: ${cleanTime}`);
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('action', 'update');
+    formData.append('id', id);
+    formData.append('client_name', client);
+    formData.append('phone', phone);
+    formData.append('service', service);
+    formData.append('date', date);
+    formData.append('time', cleanTime); // Izmanto attīrīto laiku
+    formData.append('status', status);
+    formData.append('comment', comment);
+
+    // DEBUG: Log FormData
+    console.log('🔍 DEBUG - Booking FormData entries:');
+    for (let [key, value] of formData.entries()) {
+        console.log(`  ${key}: ${value} (${typeof value})`);
+    }
+
+    const options = {
+        method: 'POST',
+        body: formData,
+        headers: AdminConfig.getHeaders(true)
+    };
+    delete options.headers['Content-Type'];
+
+    console.log('📤 Sending booking update request...');
+
+    AdminConfig.apiCall('manage-bookings.php', options)
+        .then(data => {
+            if (data && data.success) {
+                hideEditBookingModal();
+                showAlert('success', 'Rezervācija atjaunota veiksmīgi!');
+                loadRecentBookings();
+            } else {
+                console.error('❌ Server response error:', data);
+                showAlert('danger', data.error || data.message || 'Nezināma kļūda');
+            }
+        })
+        .catch(error => {
+            console.error('❌ Update booking failed:', error);
+            showAlert('danger', 'Kļūda atjaunojot rezervāciju: ' + error.message);
+        });
+}
+
 // ========================================
 // 5. PAKALPOJUMU PĀRVALDĪBA  
 // ========================================
@@ -218,11 +299,23 @@ function loadServicesData() {
                     </td>
                 </tr>
             `).join('');
+
+            // FIKSĒTS: Ielādējam pakalpojumus rezervāciju rediģēšanas formā
+            loadServicesIntoEditForm(services);
         })
         .catch(error => {
             console.error('❌ Load services failed:', error);
             servicesList.innerHTML = '<tr><td colspan="5">Kļūda ielādējot pakalpojumus</td></tr>';
         });
+}
+
+// FIKSĒTS: Pievienojam pakalpojumus rezervāciju rediģēšanas formā
+function loadServicesIntoEditForm(services) {
+    const select = document.getElementById('edit-booking-service');
+    if (select) {
+        select.innerHTML = '<option value="">Izvēlies pakalpojumu</option>' +
+            services.map(service => `<option value="${service.name}">${service.name} (€${service.price})</option>`).join('');
+    }
 }
 
 function addService() {
@@ -241,6 +334,7 @@ function addService() {
     }
     
     const formData = new FormData();
+    formData.append('action', 'add');
     formData.append('name', name);
     formData.append('price', price);
     formData.append('duration', duration);
@@ -248,10 +342,9 @@ function addService() {
     const options = {
         method: 'POST',
         body: formData,
-        headers: AdminConfig.getHeaders(true) // Tikai auth, bez Content-Type FormData
+        headers: AdminConfig.getHeaders(true)
     };
     
-    // Noņem Content-Type, lai browser auto-set multipart/form-data
     delete options.headers['Content-Type'];
     
     AdminConfig.apiCall('manage-services.php', options)
@@ -291,8 +384,73 @@ function deleteService(id) {
         });
 }
 
+// FIKSĒTS: Pievienojam pakalpojuma rediģēšanas funkciju
 function editService(id) {
-    showAlert('info', 'Pakalpojuma rediģēšana tiks pievienota drīzumā');
+    const service = window.allServicesData?.find(s => s.id == id);
+    if (!service) {
+        showAlert('danger', 'Pakalpojums nav atrasts');
+        return;
+    }
+    showEditServiceModal(service);
+}
+
+function showEditServiceModal(service) {
+    const modal = document.getElementById('edit-service-modal');
+    if (!modal) {
+        // Izveidojam modālu, ja nav
+        createEditServiceModal();
+    }
+    
+    document.getElementById('edit-service-id').value = service.id;
+    document.getElementById('edit-service-name').value = service.name;
+    document.getElementById('edit-service-price').value = service.price;
+    document.getElementById('edit-service-duration').value = service.duration;
+    document.getElementById('edit-service-modal').classList.add('active');
+}
+
+function hideEditServiceModal() {
+    document.getElementById('edit-service-modal').classList.remove('active');
+}
+
+function saveServiceChanges() {
+    const id = document.getElementById('edit-service-id').value;
+    const name = document.getElementById('edit-service-name').value.trim();
+    const price = parseFloat(document.getElementById('edit-service-price').value);
+    const duration = parseInt(document.getElementById('edit-service-duration').value);
+
+    if (!name || !price || !duration || price <= 0 || duration <= 0) {
+        showAlert('danger', 'Visi lauki ir obligāti un tiem jābūt derīgiem!');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('action', 'update');
+    formData.append('id', id);
+    formData.append('name', name);
+    formData.append('price', price);
+    formData.append('duration', duration);
+
+    const options = {
+        method: 'POST',
+        body: formData,
+        headers: AdminConfig.getHeaders(true)
+    };
+    delete options.headers['Content-Type'];
+
+    AdminConfig.apiCall('manage-services.php', options)
+        .then(data => {
+            if (data && data.success) {
+                hideEditServiceModal();
+                showAlert('success', 'Pakalpojums atjaunots veiksmīgi!');
+                loadServicesData();
+            } else {
+                showAlert('danger', data.error || data.message || 'Nezināma kļūda');
+            }
+        })
+        .catch(error => {
+            console.error('❌ Update service failed:', error);
+            showAlert('danger', 'Kļūda atjaunojot pakalpojumu: ' + error.message);
+        });
 }
 
 // ========================================
@@ -346,6 +504,9 @@ function showSection(sectionName) {
         case 'schedule': 
             loadScheduleData(); 
             break;
+        case 'clients':
+            loadClientsData();
+            break;
     }
 }
 
@@ -386,6 +547,13 @@ function addSchedule() {
     const end = document.getElementById('schedule-end').value;
     const available = document.getElementById('schedule-available').checked;
     
+    // DEBUG: Log input values
+    console.log('🔍 DEBUG - Add schedule values:', {
+        date, start, end, available,
+        startType: typeof start,
+        endType: typeof end
+    });
+    
     if (!date || !start || !end) {
         showAlert('danger', 'Visi lauki ir obligāti!');
         return;
@@ -396,9 +564,22 @@ function addSchedule() {
         return;
     }
 
-    if (window.allSchedulesData && window.allSchedulesData.some(schedule => schedule.date === date)) {
-        showAlert('danger', 'Šim datumam jau ir pievienots darba laiks!');
+    // Pārbauda laika formātu
+    const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+    if (!timeRegex.test(start)) {
+        console.error('❌ Invalid start time format:', start);
+        showAlert('danger', `Nederīgs sākuma laika formāts: ${start}`);
         return;
+    }
+    
+    if (!timeRegex.test(end)) {
+        console.error('❌ Invalid end time format:', end);
+        showAlert('danger', `Nederīgs beigu laika formāts: ${end}`);
+        return;
+    }
+
+    if (window.allSchedulesData && window.allSchedulesData.some(schedule => schedule.date === date)) {
+        showAlert('warning', 'Šim datumam jau ir pievienots darba laiks! Tas tiks atjaunots.');
     }
     
     const formData = new FormData();
@@ -408,12 +589,20 @@ function addSchedule() {
     formData.append('end_time', end);
     formData.append('is_available', available ? '1' : '0');
     
+    // DEBUG: Log FormData
+    console.log('🔍 DEBUG - Add FormData entries:');
+    for (let [key, value] of formData.entries()) {
+        console.log(`  ${key}: ${value} (${typeof value})`);
+    }
+    
     const options = {
         method: 'POST',
         body: formData,
         headers: AdminConfig.getHeaders(true)
     };
     delete options.headers['Content-Type'];
+    
+    console.log('📤 Sending add schedule request...');
     
     AdminConfig.apiCall('manage-hours.php', options)
         .then(data => {
@@ -423,6 +612,7 @@ function addSchedule() {
                 loadScheduleData();
                 document.getElementById('add-schedule-form').reset();
             } else {
+                console.error('❌ Server response error:', data);
                 showAlert('danger', data.error || data.message || 'Nezināma kļūda');
             }
         })
@@ -450,12 +640,315 @@ function deleteSchedule(id) {
         });
 }
 
+// FIKSĒTS: Pievienojam darba laika rediģēšanas funkciju
 function editSchedule(id) {
-    showAlert('info', 'Darba laika rediģēšana tiks pievienota drīzumā');
+    const schedule = window.allSchedulesData?.find(s => s.id == id);
+    if (!schedule) {
+        showAlert('danger', 'Darba laiks nav atrasts');
+        return;
+    }
+    showEditScheduleModal(schedule);
+}
+
+function showEditScheduleModal(schedule) {
+    const modal = document.getElementById('edit-schedule-modal');
+    if (!modal) {
+        createEditScheduleModal();
+    }
+    
+    // Formatē laikus pareizi (noņem sekundes, ja tādas ir)
+    let formattedStartTime = schedule.start_time;
+    let formattedEndTime = schedule.end_time;
+    
+    if (schedule.start_time && schedule.start_time.length > 5) {
+        formattedStartTime = schedule.start_time.substring(0, 5);
+    }
+    
+    if (schedule.end_time && schedule.end_time.length > 5) {
+        formattedEndTime = schedule.end_time.substring(0, 5);
+    }
+    
+    console.log('📝 Setting schedule modal values:', {
+        original_start: schedule.start_time,
+        original_end: schedule.end_time,
+        formatted_start: formattedStartTime,
+        formatted_end: formattedEndTime
+    });
+    
+    document.getElementById('edit-schedule-id').value = schedule.id;
+    document.getElementById('edit-schedule-date').value = schedule.date;
+    document.getElementById('edit-schedule-start').value = formattedStartTime;
+    document.getElementById('edit-schedule-end').value = formattedEndTime;
+    document.getElementById('edit-schedule-available').checked = schedule.is_available;
+    document.getElementById('edit-schedule-modal').classList.add('active');
+}
+
+function hideEditScheduleModal() {
+    document.getElementById('edit-schedule-modal').classList.remove('active');
+}
+
+function saveScheduleChanges() {
+    const id = document.getElementById('edit-schedule-id').value;
+    const date = document.getElementById('edit-schedule-date').value;
+    const start = document.getElementById('edit-schedule-start').value;
+    const end = document.getElementById('edit-schedule-end').value;
+    const available = document.getElementById('edit-schedule-available').checked;
+
+    // DEBUG: Log input values
+    console.log('🔍 DEBUG - Schedule values:', {
+        id, date, start, end, available,
+        startType: typeof start,
+        endType: typeof end
+    });
+
+    if (!date || !start || !end) {
+        showAlert('danger', 'Visi lauki ir obligāti!');
+        return;
+    }
+
+    if (start >= end) {
+        showAlert('danger', 'Sākuma laikam jābūt pirms beigu laika!');
+        return;
+    }
+
+    // Pārbauda laika formātu
+    const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+    if (!timeRegex.test(start)) {
+        console.error('❌ Invalid start time format:', start);
+        showAlert('danger', `Nederīgs sākuma laika formāts: ${start}`);
+        return;
+    }
+    
+    if (!timeRegex.test(end)) {
+        console.error('❌ Invalid end time format:', end);
+        showAlert('danger', `Nederīgs beigu laika formāts: ${end}`);
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('action', 'update');
+    formData.append('id', id);
+    formData.append('date', date);
+    formData.append('start_time', start);
+    formData.append('end_time', end);
+    formData.append('is_available', available ? '1' : '0');
+
+    // DEBUG: Log FormData
+    console.log('🔍 DEBUG - FormData entries:');
+    for (let [key, value] of formData.entries()) {
+        console.log(`  ${key}: ${value} (${typeof value})`);
+    }
+
+    const options = {
+        method: 'POST',
+        body: formData,
+        headers: AdminConfig.getHeaders(true)
+    };
+    delete options.headers['Content-Type'];
+
+    console.log('📤 Sending schedule update request...');
+
+    AdminConfig.apiCall('manage-hours.php', options)
+        .then(data => {
+            if (data && data.success) {
+                hideEditScheduleModal();
+                showAlert('success', 'Darba laiks atjaunots veiksmīgi!');
+                loadScheduleData();
+            } else {
+                showAlert('danger', data.error || data.message || 'Nezināma kļūda');
+            }
+        })
+        .catch(error => {
+            console.error('❌ Update schedule failed:', error);
+            showAlert('danger', 'Kļūda atjaunojot darba laiku: ' + error.message);
+        });
 }
 
 // ========================================
-// 8. MODĀLIE LOGI
+// 8. KLIENTU PĀRVALDĪBA
+// ========================================
+
+function loadClientsData() {
+    const clientsList = document.getElementById('clients-list');
+    if (!clientsList) return;
+    
+    AdminConfig.apiCall('get-clients.php')
+        .then(clients => {
+            window.allClientsData = clients;
+
+            if (clients.length === 0) {
+                clientsList.innerHTML = '<tr><td colspan="6">Nav klientu</td></tr>';
+                return;
+            }
+
+            clientsList.innerHTML = clients.map(client => `
+                <tr>
+                    <td>${client.name}</td>
+                    <td>${client.email}</td>
+                    <td>${client.phone}</td>
+                    <td>${client.bookings_count || 0}</td>
+                    <td>${client.last_visit || 'Nav bijis'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="editClient(${client.id})">Rediģēt</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteClient(${client.id})">Dzēst</button>
+                    </td>
+                </tr>
+            `).join('');
+        })
+        .catch(error => {
+            console.error('❌ Load clients failed:', error);
+            clientsList.innerHTML = '<tr><td colspan="6">Kļūda ielādējot klientus</td></tr>';
+        });
+}
+
+function addClient() {
+    const name = document.getElementById('client-name').value.trim();
+    const email = document.getElementById('client-email').value.trim();
+    const phone = document.getElementById('client-phone').value.trim();
+    
+    if (!name || !email || !phone) {
+        showAlert('danger', 'Visi lauki ir obligāti!');
+        return;
+    }
+
+    // Vienkārša email validācija
+    if (!email.includes('@') || !email.includes('.')) {
+        showAlert('danger', 'Nederīgs e-pasta formāts!');
+        return;
+    }
+
+    if (window.allClientsData && window.allClientsData.some(client => 
+        client.email.toLowerCase() === email.toLowerCase() || client.phone === phone)) {
+        showAlert('danger', 'Klients ar šādu e-pastu vai telefonu jau pastāv!');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('action', 'add');
+    formData.append('name', name);
+    formData.append('email', email);
+    formData.append('phone', phone);
+    formData.append('password', 'temp123'); // Temp parole
+    
+    const options = {
+        method: 'POST',
+        body: formData,
+        headers: AdminConfig.getHeaders(true)
+    };
+    
+    delete options.headers['Content-Type'];
+    
+    AdminConfig.apiCall('manage-clients.php', options)
+        .then(data => {
+            if (data && data.success) {
+                hideAddClientModal();
+                showAlert('success', `Klients "${name}" pievienots veiksmīgi!`);
+                loadClientsData();
+                updateStatsCards();
+                document.getElementById('add-client-form').reset();
+            } else {
+                showAlert('danger', data.error || data.message || 'Nezināma kļūda');
+            }
+        })
+        .catch(error => {
+            console.error('❌ Add client failed:', error);
+            showAlert('danger', 'Kļūda pievienojot klientu: ' + error.message);
+        });
+}
+
+function deleteClient(id) {
+    if (!confirm('Vai tiešām vēlies dzēst šo klientu? Tas dzēsīs arī visas viņa rezervācijas!')) return;
+    
+    AdminConfig.apiCall(`manage-clients.php?action=delete&id=${id}`)
+        .then(data => {
+            if (data.success) {
+                showAlert('success', 'Klients dzēsts veiksmīgi!');
+                loadClientsData();
+                updateStatsCards();
+            } else {
+                showAlert('danger', 'Kļūda dzēšot klientu');
+            }
+        })
+        .catch(error => {
+            console.error('❌ Delete client failed:', error);
+            showAlert('danger', 'Kļūda dzēšot klientu: ' + error.message);
+        });
+}
+
+function editClient(id) {
+    const client = window.allClientsData?.find(c => c.id == id);
+    if (!client) {
+        showAlert('danger', 'Klients nav atrasts');
+        return;
+    }
+    showEditClientModal(client);
+}
+
+function showEditClientModal(client) {
+    const modal = document.getElementById('edit-client-modal');
+    if (!modal) {
+        createEditClientModal();
+    }
+    
+    document.getElementById('edit-client-id').value = client.id;
+    document.getElementById('edit-client-name').value = client.name;
+    document.getElementById('edit-client-email').value = client.email;
+    document.getElementById('edit-client-phone').value = client.phone;
+    document.getElementById('edit-client-modal').classList.add('active');
+}
+
+function hideEditClientModal() {
+    document.getElementById('edit-client-modal').classList.remove('active');
+}
+
+function saveClientChanges() {
+    const id = document.getElementById('edit-client-id').value;
+    const name = document.getElementById('edit-client-name').value.trim();
+    const email = document.getElementById('edit-client-email').value.trim();
+    const phone = document.getElementById('edit-client-phone').value.trim();
+
+    if (!name || !email || !phone) {
+        showAlert('danger', 'Visi lauki ir obligāti!');
+        return;
+    }
+
+    if (!email.includes('@') || !email.includes('.')) {
+        showAlert('danger', 'Nederīgs e-pasta formāts!');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('action', 'update');
+    formData.append('id', id);
+    formData.append('name', name);
+    formData.append('email', email);
+    formData.append('phone', phone);
+
+    const options = {
+        method: 'POST',
+        body: formData,
+        headers: AdminConfig.getHeaders(true)
+    };
+    delete options.headers['Content-Type'];
+
+    AdminConfig.apiCall('manage-clients.php', options)
+        .then(data => {
+            if (data && data.success) {
+                hideEditClientModal();
+                showAlert('success', 'Klients atjaunots veiksmīgi!');
+                loadClientsData();
+            } else {
+                showAlert('danger', data.error || data.message || 'Nezināma kļūda');
+            }
+        })
+        .catch(error => {
+            console.error('❌ Update client failed:', error);
+            showAlert('danger', 'Kļūda atjaunojot klientu: ' + error.message);
+        });
+}
+
+// ========================================
+// 9. MODĀLIE LOGI
 // ========================================
 
 function showAddServiceModal() { document.getElementById('add-service-modal').classList.add('active'); }
@@ -467,12 +960,24 @@ function hideAddClientModal() { document.getElementById('add-client-modal').clas
 
 function showEditBookingModal(booking) {
     const modal = document.getElementById('edit-booking-modal');
+    
+    // Formatē laiku pareizi (noņem sekundes, ja tādas ir)
+    let formattedTime = booking.time;
+    if (booking.time && booking.time.length > 5) {
+        formattedTime = booking.time.substring(0, 5);
+    }
+    
+    console.log('📝 Setting booking modal values:', {
+        original_time: booking.time,
+        formatted_time: formattedTime
+    });
+    
     document.getElementById('edit-booking-id').value = booking.id;
     document.getElementById('edit-booking-client').value = booking.client_name;
     document.getElementById('edit-booking-phone').value = booking.client_phone;
     document.getElementById('edit-booking-service').value = booking.service;
     document.getElementById('edit-booking-date').value = booking.date;
-    document.getElementById('edit-booking-time').value = booking.time;
+    document.getElementById('edit-booking-time').value = formattedTime;
     document.getElementById('edit-booking-status').value = booking.status;
     document.getElementById('edit-booking-comment').value = booking.comment || '';
     modal.classList.add('active');
@@ -481,7 +986,113 @@ function showEditBookingModal(booking) {
 function hideEditBookingModal() { document.getElementById('edit-booking-modal').classList.remove('active'); }
 
 // ========================================
-// 9. PALĪGFUNKCIJAS
+// 10. DINAMISKIE MODĀLIE LOGI (ja nav HTML-ā)
+// ========================================
+
+function createEditServiceModal() {
+    const modalHTML = `
+    <div id="edit-service-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">✏️ Rediģēt pakalpojumu</h3>
+                <button class="close-btn" onclick="hideEditServiceModal()">&times;</button>
+            </div>
+            <form id="edit-service-form" onsubmit="event.preventDefault(); saveServiceChanges();">
+                <input type="hidden" id="edit-service-id">
+                <div class="form-group">
+                    <label class="form-label">Pakalpojuma nosaukums</label>
+                    <input type="text" class="form-control" id="edit-service-name" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Cena (EUR)</label>
+                    <input type="number" class="form-control" id="edit-service-price" step="0.01" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Ilgums (minūtes)</label>
+                    <input type="number" class="form-control" id="edit-service-duration" min="1" required>
+                </div>
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                    <button type="button" class="btn btn-secondary" onclick="hideEditServiceModal()">Atcelt</button>
+                    <button type="submit" class="btn btn-primary">💾 Saglabāt</button>
+                </div>
+            </form>
+        </div>
+    </div>`;
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
+
+function createEditScheduleModal() {
+    const modalHTML = `
+    <div id="edit-schedule-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">✏️ Rediģēt darba laiku</h3>
+                <button class="close-btn" onclick="hideEditScheduleModal()">&times;</button>
+            </div>
+            <form id="edit-schedule-form" onsubmit="event.preventDefault(); saveScheduleChanges();">
+                <input type="hidden" id="edit-schedule-id">
+                <div class="form-group">
+                    <label class="form-label">Datums</label>
+                    <input type="date" class="form-control" id="edit-schedule-date" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Sākuma laiks</label>
+                    <input type="time" class="form-control" id="edit-schedule-start" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Beigu laiks</label>
+                    <input type="time" class="form-control" id="edit-schedule-end" required>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="edit-schedule-available">
+                        Pieejams rezervācijām
+                    </label>
+                </div>
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                    <button type="button" class="btn btn-secondary" onclick="hideEditScheduleModal()">Atcelt</button>
+                    <button type="submit" class="btn btn-primary">💾 Saglabāt</button>
+                </div>
+            </form>
+        </div>
+    </div>`;
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
+
+function createEditClientModal() {
+    const modalHTML = `
+    <div id="edit-client-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">✏️ Rediģēt klientu</h3>
+                <button class="close-btn" onclick="hideEditClientModal()">&times;</button>
+            </div>
+            <form id="edit-client-form" onsubmit="event.preventDefault(); saveClientChanges();">
+                <input type="hidden" id="edit-client-id">
+                <div class="form-group">
+                    <label class="form-label">Vārds</label>
+                    <input type="text" class="form-control" id="edit-client-name" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">E-pasts</label>
+                    <input type="email" class="form-control" id="edit-client-email" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Telefons</label>
+                    <input type="tel" class="form-control" id="edit-client-phone" required>
+                </div>
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                    <button type="button" class="btn btn-secondary" onclick="hideEditClientModal()">Atcelt</button>
+                    <button type="submit" class="btn btn-primary">💾 Saglabāt</button>
+                </div>
+            </form>
+        </div>
+    </div>`;
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
+
+// ========================================
+// 11. PALĪGFUNKCIJAS
 // ========================================
 
 function getStatusClass(status) {
@@ -511,7 +1122,7 @@ function toggleMobileMenu() {
 }
 
 // ========================================
-// 10. DEBUG RĪKI
+// 12. DEBUG RĪKI
 // ========================================
 
 function addTestButtons() {
@@ -533,7 +1144,7 @@ function addTestButtons() {
 }
 
 // ========================================
-// 11. INICIALIZĀCIJA
+// 13. INICIALIZĀCIJA
 // ========================================
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -556,6 +1167,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
+    // Formu event listeners
     document.getElementById('add-service-form')?.addEventListener('submit', function(e) {
         e.preventDefault();
         addService();
@@ -564,6 +1176,16 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('add-schedule-form')?.addEventListener('submit', function(e) {
         e.preventDefault();
         addSchedule();
+    });
+    
+    document.getElementById('add-client-form')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+        addClient();
+    });
+    
+    document.getElementById('edit-booking-form')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveBookingChanges();
     });
     
     console.log('📊 Ielādē sākuma datus...');
@@ -579,7 +1201,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ========================================
-// 12. GLOBĀLO FUNKCIJU EKSPORTS
+// 14. GLOBĀLO FUNKCIJU EKSPORTS
 // ========================================
 
 window.debugAuth = debugAuth;
@@ -592,13 +1214,21 @@ window.showSection = showSection;
 window.addService = addService;
 window.deleteService = deleteService;
 window.editService = editService;
+window.saveServiceChanges = saveServiceChanges;
 window.loadServicesData = loadServicesData;
 window.loadScheduleData = loadScheduleData;
 window.addSchedule = addSchedule;
 window.deleteSchedule = deleteSchedule;
 window.editSchedule = editSchedule;
+window.saveScheduleChanges = saveScheduleChanges;
+window.loadClientsData = loadClientsData;
+window.addClient = addClient;
+window.deleteClient = deleteClient;
+window.editClient = editClient;
+window.saveClientChanges = saveClientChanges;
 window.deleteBooking = deleteBooking;
 window.editBooking = editBooking;
+window.saveBookingChanges = saveBookingChanges;
 window.showAddServiceModal = showAddServiceModal;
 window.hideAddServiceModal = hideAddServiceModal;
 window.showAddScheduleModal = showAddScheduleModal;
@@ -607,6 +1237,12 @@ window.showAddClientModal = showAddClientModal;
 window.hideAddClientModal = hideAddClientModal;
 window.showEditBookingModal = showEditBookingModal;
 window.hideEditBookingModal = hideEditBookingModal;
+window.showEditServiceModal = showEditServiceModal;
+window.hideEditServiceModal = hideEditServiceModal;
+window.showEditScheduleModal = showEditScheduleModal;
+window.hideEditScheduleModal = hideEditScheduleModal;
+window.showEditClientModal = showEditClientModal;
+window.hideEditClientModal = hideEditClientModal;
 window.logout = logout;
 window.toggleMobileMenu = toggleMobileMenu;
 window.getStatusClass = getStatusClass;

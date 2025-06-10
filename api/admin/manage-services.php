@@ -1,5 +1,5 @@
 <?php
-// /api/admin/manage-services.php - FIKSĒTS race condition
+// /api/admin/manage-services.php - UZLABOTS ar pakalpojumu atjaunošanas funkciju
 session_start();
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: http://localhost');
@@ -55,7 +55,7 @@ try {
                 sendError(400, 'Ilgums jābūt lielākam par 0');
             }
 
-            // FIKSĒTS: Izmanto INSERT ar UNIQUE constraint, nevis atsevišķu pārbaudi
+            // Izmanto INSERT ar UNIQUE constraint
             try {
                 $stmt = $pdo->prepare('INSERT INTO services (name, price, duration) VALUES (?, ?, ?)');
                 $stmt->execute([$name, $price, $duration]);
@@ -70,15 +70,83 @@ try {
                 ]);
                 
             } catch (PDOException $e) {
-                // Pārbauda vai kļūda ir dublējošs atslēgas
                 if ($e->getCode() == 23000 || strpos($e->getMessage(), 'Duplicate entry') !== false) {
-                    error_log("Dublējošs pakalpojums: $name (Admin: {$admin['name']})");
+                    error_log("Dublējošs pakalpojums: $name (Admin: {$admin['username']})");
                     sendError(400, 'Pakalpojums ar šādu nosaukumu jau eksistē');
                 } else {
-                    // Cita datubāzes kļūda
                     error_log('DB kļūda pievienojot pakalpojumu: ' . $e->getMessage());
                     sendError(500, 'Datubāzes kļūda: ' . $e->getMessage());
                 }
+            }
+            break;
+
+        case 'update':
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                sendError(405, 'Metode nav atļauta');
+            }
+            
+            $id = intval($_POST['id'] ?? 0);
+            $name = trim($_POST['name'] ?? '');
+            $price = floatval($_POST['price'] ?? 0);
+            $duration = intval($_POST['duration'] ?? 0);
+
+            if (!$id) {
+                sendError(400, 'Pakalpojuma ID ir obligāts');
+            }
+
+            if (!$name) {
+                sendError(400, 'Pakalpojuma nosaukums ir obligāts');
+            }
+            
+            if ($price <= 0) {
+                sendError(400, 'Cena jābūt lielākai par 0');
+            }
+            
+            if ($duration <= 0) {
+                sendError(400, 'Ilgums jābūt lielākam par 0');
+            }
+
+            // Pārbauda vai pakalpojums eksistē
+            $stmt = $pdo->prepare('SELECT name FROM services WHERE id = ?');
+            $stmt->execute([$id]);
+            $oldService = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$oldService) {
+                sendError(404, 'Pakalpojums nav atrasts');
+            }
+
+            // Pārbauda dublējošos nosaukumus (izņemot pašreizējo)
+            $stmt = $pdo->prepare('SELECT id FROM services WHERE name = ? AND id != ?');
+            $stmt->execute([$name, $id]);
+            if ($stmt->fetch()) {
+                sendError(400, 'Pakalpojums ar šādu nosaukumu jau eksistē');
+            }
+
+            // Atjauno pakalpojumu
+            $stmt = $pdo->prepare('UPDATE services SET name = ?, price = ?, duration = ? WHERE id = ?');
+            $stmt->execute([$name, $price, $duration, $id]);
+            
+            if ($stmt->rowCount() > 0) {
+                error_log("Admin atjaunoja pakalpojumu: ID=$id, OldName={$oldService['name']}, NewName=$name, Price=$price, Duration=$duration");
+                
+                // Atjauno arī rezervāciju tabulu, ja nosaukums mainījās
+                if ($oldService['name'] !== $name) {
+                    $stmt = $pdo->prepare('UPDATE bookings SET service = ? WHERE service = ?');
+                    $stmt->execute([$name, $oldService['name']]);
+                    $updatedBookings = $stmt->rowCount();
+                    error_log("Atjaunoja $updatedBookings rezervācijas ar jauno pakalpojuma nosaukumu");
+                }
+
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Pakalpojums atjaunots veiksmīgi'
+                ]);
+            } else {
+                // Nav izmaiņu, bet tas nav kļūda
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Pakalpojums saglabāts (nav izmaiņu)'
+                ]);
             }
             break;
             

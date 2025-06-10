@@ -1,5 +1,5 @@
 <?php
-// /api/admin/manage-hours.php - UZLABOTS ar visām funkcijām
+// /api/admin/manage-hours.php - DEBUG versija ar uzlabotu validāciju
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: http://localhost');
 header('Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS');
@@ -14,7 +14,7 @@ require_once __DIR__ . '/../../core/db.php';
 require_once __DIR__ . '/../../core/auth.php';
 require_once __DIR__ . '/../../core/functions.php';
 
-// Admin autentifikācija (tāda pati kā manage-services.php)
+// Admin autentifikācija
 $headers = function_exists('getallheaders') ? getallheaders() : [];
 $authHeader = $headers['Authorization'] ?? $_SERVER['HTTP_AUTHORIZATION'] ?? '';
 
@@ -30,6 +30,10 @@ if (!$admin) {
 }
 
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
+
+// DEBUG: Log incoming data
+error_log("DEBUG: Action = $action");
+error_log("DEBUG: POST data = " . print_r($_POST, true));
 
 try {
     switch ($action) {
@@ -66,89 +70,162 @@ try {
             echo json_encode($formattedHours);
             break;
   
-  case 'add':
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        sendError(405, 'Metode nav atļauta');
-    }
-    
-    $date = $_POST['date'] ?? '';
-    $start_time = $_POST['start_time'] ?? '';
-    $end_time = $_POST['end_time'] ?? '';
-    $is_available = isset($_POST['is_available']) && $_POST['is_available'] ? 1 : 0;
+        case 'add':
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                sendError(405, 'Metode nav atļauta');
+            }
+            
+            $date = $_POST['date'] ?? '';
+            $start_time = $_POST['start_time'] ?? '';
+            $end_time = $_POST['end_time'] ?? '';
+            $is_available = isset($_POST['is_available']) && $_POST['is_available'] ? 1 : 0;
 
-    // Validācija
-    if (!$date || !$start_time || !$end_time) {
-        sendError(400, 'Datums, sākuma laiks un beigu laiks ir obligāti');
-    }
+            // DEBUG: Log validation input
+            error_log("DEBUG: Validating - Date: $date, Start: $start_time, End: $end_time, Available: $is_available");
 
-    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
-        sendError(400, 'Nederīgs datuma formāts');
-    }
+            // Validācija
+            if (!$date || !$start_time || !$end_time) {
+                error_log("DEBUG: Empty fields validation failed");
+                sendError(400, 'Datums, sākuma laiks un beigu laiks ir obligāti');
+            }
 
-    if ($date < date('Y-m-d')) {
-        sendError(400, 'Nevar pievienot darba laiku pagātnei');
-    }
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+                error_log("DEBUG: Date format validation failed for: $date");
+                sendError(400, 'Nederīgs datuma formāts');
+            }
 
-    if (!preg_match('/^\d{2}:\d{2}$/', $start_time) || !preg_match('/^\d{2}:\d{2}$/', $end_time)) {
-        sendError(400, 'Nederīgs laika formāts');
-    }
+            if ($date < date('Y-m-d')) {
+                error_log("DEBUG: Past date validation failed for: $date");
+                sendError(400, 'Nevar pievienot darba laiku pagātnei');
+            }
 
-    if ($start_time >= $end_time) {
-        sendError(400, 'Sākuma laikam jābūt pirms beigu laika');
-    }
+            // UZLABOTA laika validācija - atļauj gan "9:30", gan "09:30"
+            if (!preg_match('/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/', $start_time)) {
+                error_log("DEBUG: Start time format validation failed for: $start_time");
+                sendError(400, "Nederīgs sākuma laika formāts: $start_time");
+            }
+            
+            if (!preg_match('/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/', $end_time)) {
+                error_log("DEBUG: End time format validation failed for: $end_time");
+                sendError(400, "Nederīgs beigu laika formāts: $end_time");
+            }
 
-    // UPSERT - atjauno, ja eksistē, pievieno, ja nav
-    $stmt = $pdo->prepare('
-        INSERT INTO working_hours (date, start_time, end_time, is_available) 
-        VALUES (?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE 
-        start_time = VALUES(start_time),
-        end_time = VALUES(end_time),
-        is_available = VALUES(is_available)
-    ');
-    
-    if ($stmt->execute([$date, $start_time, $end_time, $is_available])) {
-        $newId = $pdo->lastInsertId();
-        $message = $newId > 0 ? 'Darba laiks pievienots veiksmīgi' : 'Darba laiks atjaunots veiksmīgi';
-        
-        error_log("Admin saglabāja darba laiku: Date=$date, $start_time-$end_time, Available=" . ($is_available ? 'yes' : 'no'));
-        
-        echo json_encode([
-            'success' => true,
-            'message' => $message,
-            'id' => $newId ?: 'updated'
-        ]);
-    } else {
-        sendError(500, 'Neizdevās saglabāt darba laiku');
-    }
-    break;
+            if ($start_time >= $end_time) {
+                error_log("DEBUG: Time order validation failed: $start_time >= $end_time");
+                sendError(400, 'Sākuma laikam jābūt pirms beigu laika');
+            }
 
-            // Mēģina pievienot darba laiku
-            try {
-                $stmt = $pdo->prepare('
-                    INSERT INTO working_hours (date, start_time, end_time, is_available) 
-                    VALUES (?, ?, ?, ?)
-                ');
-                $stmt->execute([$date, $start_time, $end_time, $is_available]);
-                
+            error_log("DEBUG: All validations passed, inserting into DB");
+
+            // UPSERT - atjauno, ja eksistē, pievieno, ja nav
+            $stmt = $pdo->prepare('
+                INSERT INTO working_hours (date, start_time, end_time, is_available) 
+                VALUES (?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE 
+                start_time = VALUES(start_time),
+                end_time = VALUES(end_time),
+                is_available = VALUES(is_available)
+            ');
+            
+            if ($stmt->execute([$date, $start_time, $end_time, $is_available])) {
                 $newId = $pdo->lastInsertId();
-                $statusText = $is_available ? 'pieejams' : 'nepieejams';
+                $message = $newId > 0 ? 'Darba laiks pievienots veiksmīgi' : 'Darba laiks atjaunots veiksmīgi';
                 
-                error_log("Admin pievienoja darba laiku: ID=$newId, Date=$date, $start_time-$end_time ($statusText)");
-
+                error_log("Admin saglabāja darba laiku: Date=$date, $start_time-$end_time, Available=" . ($is_available ? 'yes' : 'no'));
+                
                 echo json_encode([
                     'success' => true,
-                    'message' => 'Darba laiks pievienots veiksmīgi',
-                    'id' => $newId
+                    'message' => $message,
+                    'id' => $newId ?: 'updated'
                 ]);
-                
-            } catch (PDOException $e) {
-                if ($e->getCode() == 23000 || strpos($e->getMessage(), 'Duplicate') !== false) {
-                    sendError(400, 'Darba laiks šim datumam jau eksistē');
-                } else {
-                    error_log('DB kļūda pievienojot darba laiku: ' . $e->getMessage());
-                    sendError(500, 'Datubāzes kļūda: ' . $e->getMessage());
+            } else {
+                error_log("DEBUG: Database insert failed");
+                sendError(500, 'Neizdevās saglabāt darba laiku');
+            }
+            break;
+
+        case 'update':
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                sendError(405, 'Metode nav atļauta');
+            }
+            
+            $id = intval($_POST['id'] ?? 0);
+            $date = $_POST['date'] ?? '';
+            $start_time = $_POST['start_time'] ?? '';
+            $end_time = $_POST['end_time'] ?? '';
+            $is_available = isset($_POST['is_available']) && $_POST['is_available'] ? 1 : 0;
+
+            // DEBUG: Log update data
+            error_log("DEBUG: UPDATE - ID: $id, Date: $date, Start: $start_time, End: $end_time, Available: $is_available");
+
+            // Validācija
+            if (!$id) {
+                sendError(400, 'Darba laika ID ir obligāts');
+            }
+
+            if (!$date || !$start_time || !$end_time) {
+                sendError(400, 'Datums, sākuma laiks un beigu laiks ir obligāti');
+            }
+
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+                sendError(400, 'Nederīgs datuma formāts');
+            }
+
+            // UZLABOTA laika validācija
+            if (!preg_match('/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/', $start_time)) {
+                error_log("DEBUG: UPDATE Start time format validation failed for: $start_time");
+                sendError(400, "Nederīgs sākuma laika formāts: $start_time");
+            }
+            
+            if (!preg_match('/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/', $end_time)) {
+                error_log("DEBUG: UPDATE End time format validation failed for: $end_time");
+                sendError(400, "Nederīgs beigu laika formāts: $end_time");
+            }
+
+            if ($start_time >= $end_time) {
+                sendError(400, 'Sākuma laikam jābūt pirms beigu laika');
+            }
+
+            // Pārbauda vai darba laiks eksistē
+            $stmt = $pdo->prepare('SELECT date FROM working_hours WHERE id = ?');
+            $stmt->execute([$id]);
+            $existingHour = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$existingHour) {
+                sendError(404, 'Darba laiks nav atrasts');
+            }
+
+            // Pārbauda konfliktu ar citiem darba laikiem (izņemot pašreizējo)
+            if ($date !== $existingHour['date']) {
+                $stmt = $pdo->prepare('SELECT id FROM working_hours WHERE date = ? AND id != ?');
+                $stmt->execute([$date, $id]);
+                if ($stmt->fetch()) {
+                    sendError(400, 'Šim datumam jau ir pievienots darba laiks');
                 }
+            }
+
+            // Atjauno darba laiku
+            $stmt = $pdo->prepare('
+                UPDATE working_hours 
+                SET date = ?, start_time = ?, end_time = ?, is_available = ? 
+                WHERE id = ?
+            ');
+            
+            $stmt->execute([$date, $start_time, $end_time, $is_available, $id]);
+            
+            if ($stmt->rowCount() > 0) {
+                error_log("Admin atjaunoja darba laiku: ID=$id, Date=$date, $start_time-$end_time, Available=" . ($is_available ? 'yes' : 'no'));
+                
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Darba laiks atjaunots veiksmīgi'
+                ]);
+            } else {
+                // Nav izmaiņu, bet tas nav kļūda
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Darba laiks saglabāts (nav izmaiņu)'
+                ]);
             }
             break;
             
