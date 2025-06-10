@@ -72,7 +72,7 @@ function showAlert(type, message) {
 // 3. STATISTIKAS IELĀDE
 // ========================================
 
-function loadStatsCard(statType, elementId) {
+function loadStatsCard(statType, elementId, onSuccess) {
     if (!debugAuth()) return;
     
     AdminConfig.apiCall(`get-stats.php?stat=${statType}`)
@@ -92,6 +92,11 @@ function loadStatsCard(statType, elementId) {
             } else {
                 console.warn(`⚠️ Element ar ID '${elementId}' nav atrasts`);
             }
+            
+            // Izsauc success callback, ja tāds ir
+            if (onSuccess && typeof onSuccess === 'function') {
+                onSuccess();
+            }
         })
         .catch(error => {
             console.error(`❌ Stats ${statType} failed:`, error);
@@ -100,16 +105,43 @@ function loadStatsCard(statType, elementId) {
                 element.textContent = 'Kļūda';
                 element.style.color = '#f56565';
             }
+            // Stats kļūda - rāda error alert
+            showAlert('danger', `Statistikas "${statType}" ielādes kļūda: ${error.message}`);
         });
 }
 
 function updateStatsCards() {
     console.log('📊 Ielādē visas statistikas...');
     
-    loadStatsCard('today_bookings', 'today-bookings');
-    loadStatsCard('total_clients', 'total-clients');
-    loadStatsCard('active_services', 'active-services');
-    loadStatsCard('weekly_revenue', 'weekly-revenue');
+    let successCount = 0;
+    let totalStats = 4;
+    
+    const checkCompletion = () => {
+        if (successCount === totalStats) {
+            showAlert('success', `✅ Visas ${totalStats} statistikas ielādētas veiksmīgi!`);
+        }
+    };
+    
+    // Ielādē katru statistiku ar success/error tracking
+    loadStatsCard('today_bookings', 'today-bookings', () => {
+        successCount++;
+        checkCompletion();
+    });
+    
+    loadStatsCard('total_clients', 'total-clients', () => {
+        successCount++;
+        checkCompletion();
+    });
+    
+    loadStatsCard('active_services', 'active-services', () => {
+        successCount++;
+        checkCompletion();
+    });
+    
+    loadStatsCard('weekly_revenue', 'weekly-revenue', () => {
+        successCount++;
+        checkCompletion();
+    });
 }
 
 // ========================================
@@ -127,6 +159,7 @@ function loadRecentBookings() {
     
     if (!tbody) {
         console.warn(`⚠️ Rezervāciju tabula nav atrasta. Active section: ${activeSection?.id}`);
+        showAlert('warning', 'Rezervāciju tabula nav atrasta!');
         return;
     }
     
@@ -139,6 +172,7 @@ function loadRecentBookings() {
             
             if (bookings.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="6">Nav rezervāciju</td></tr>';
+                showAlert('info', 'Nav rezervāciju datubāzē');
                 return;
             }
             
@@ -159,10 +193,14 @@ function loadRecentBookings() {
                     </td>
                 </tr>
             `).join('');
+            
+            // Parāda success ziņojumu
+            showAlert('success', `✅ Ielādētas ${bookings.length} rezervācijas veiksmīgi!`);
         })
         .catch(error => {
             console.error('❌ Recent bookings failed:', error);
             tbody.innerHTML = `<tr><td colspan="6" style="color: #f56565;">Kļūda ielādējot rezervācijas.</td></tr>`;
+            showAlert('danger', `Rezervāciju ielādes kļūda: ${error.message}`);
         });
 }
 
@@ -1135,12 +1173,67 @@ function addTestButtons() {
     
     debugDiv.innerHTML = `
         <button onclick="testAPIConnection()" class="btn btn-sm btn-warning">🧪 Test API</button>
-        <button onclick="updateStatsCards()" class="btn btn-sm btn-info">📊 Reload Stats</button>
-        <button onclick="loadRecentBookings()" class="btn btn-sm btn-info">📅 Reload Bookings</button>
+        <button onclick="testStatsReload()" class="btn btn-sm btn-info">📊 Test Stats</button>
+        <button onclick="testBookingsReload()" class="btn btn-sm btn-info">📅 Test Bookings</button>
+        <button onclick="testAllSystems()" class="btn btn-sm btn-success">🔧 Test All</button>
         <button onclick="AdminConfig.debug()" class="btn btn-sm btn-secondary">🔍 Debug Config</button>
     `;
     
     container.appendChild(debugDiv);
+}
+
+// Uzlaboti test funkcijās
+function testStatsReload() {
+    console.log('🧪 Testing Statistics Reload...');
+    showAlert('info', '📊 Pārbauda statistikas ielādi...');
+    updateStatsCards();
+}
+
+function testBookingsReload() {
+    console.log('🧪 Testing Bookings Reload...');
+    showAlert('info', '📅 Pārbauda rezervāciju ielādi...');
+    loadRecentBookings();
+}
+
+function testAllSystems() {
+    console.log('🧪 Testing All Systems...');
+    showAlert('info', '🔧 Veic pilnu sistēmas pārbaudi...');
+    
+    let testsCompleted = 0;
+    const totalTests = 3;
+    
+    const checkAllComplete = () => {
+        testsCompleted++;
+        if (testsCompleted === totalTests) {
+            setTimeout(() => {
+                showAlert('success', '🎉 Visi sistēmas testi pabeigti veiksmīgi!');
+            }, 1000);
+        }
+    };
+    
+    // Test 1: API Connection
+    AdminConfig.apiCall('get-stats.php?stat=today_bookings')
+        .then(data => {
+            console.log('✅ API Test passed:', data);
+            checkAllComplete();
+        })
+        .catch(error => {
+            console.error('❌ API Test failed:', error);
+            showAlert('danger', 'API savienojuma tests neizdevās!');
+            checkAllComplete();
+        });
+    
+    // Test 2: Stats
+    setTimeout(() => {
+        testStatsReload();
+        checkAllComplete();
+    }, 500);
+    
+    // Test 3: Bookings
+    setTimeout(() => {
+        testBookingsReload();
+        checkAllComplete();
+    }, 1000);
 }
 
 // ========================================
@@ -1206,6 +1299,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
 window.debugAuth = debugAuth;
 window.testAPIConnection = testAPIConnection;
+window.testStatsReload = testStatsReload;
+window.testBookingsReload = testBookingsReload;
+window.testAllSystems = testAllSystems;
 window.showAlert = showAlert;
 window.updateStatsCards = updateStatsCards;
 window.loadRecentBookings = loadRecentBookings;
