@@ -1,5 +1,4 @@
-// admin.js - Pilnīgs administrācijas panelis ar visām funkcijām
-// Pievienotas minimālas izmaiņas, lai novērstu dublikātu veidošanos.
+// admin.js - Atjauninātais ar universālu konfigurāciju
 
 // ========================================
 // 1. DEBUGGING UN PAMATA FUNKCIJAS
@@ -11,7 +10,7 @@ function debugAuth() {
     
     if (!token) {
         console.log('❌ Nav admin token - novirzi uz login lapu');
-        window.location.href = '/admin/login.php';
+        window.location.href = AdminConfig.getAdminUrl('login.php');
         return false;
     }
     return true;
@@ -20,34 +19,15 @@ function debugAuth() {
 function testAPIConnection() {
     if (!debugAuth()) return;
     
-    const token = localStorage.getItem('admin_token');
-    
-    fetch('/api/admin/get-stats.php?stat=today_bookings', {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => {
-        console.log('📡 API Response status:', response.status);
-        if (response.ok) {
-            return response.json();
-        } else {
-            return response.text().then(text => {
-                console.error('❌ API Error:', text);
-                throw new Error(`HTTP ${response.status}: ${text}`);
-            });
-        }
-    })
-    .then(data => {
-        console.log('✅ API Test uspešīgs:', data);
-        showAlert('success', 'API savienojums darbojas!');
-    })
-    .catch(error => {
-        console.error('❌ API Test failed:', error);
-        showAlert('danger', 'API savienojuma kļūda: ' + error.message);
-    });
+    AdminConfig.apiCall('get-stats.php?stat=today_bookings')
+        .then(data => {
+            console.log('✅ API Test uspešīgs:', data);
+            showAlert('success', 'API savienojums darbojas!');
+        })
+        .catch(error => {
+            console.error('❌ API Test failed:', error);
+            showAlert('danger', 'API savienojuma kļūda: ' + error.message);
+        });
 }
 
 // ========================================
@@ -95,52 +75,32 @@ function showAlert(type, message) {
 function loadStatsCard(statType, elementId) {
     if (!debugAuth()) return;
     
-    const token = localStorage.getItem('admin_token');
-    
-    fetch(`/api/admin/get-stats.php?stat=${statType}`, {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => {
-        console.log(`📊 Stats ${statType} response:`, response.status);
-        
-        if (response.ok) {
-            return response.json();
-        } else {
-            return response.text().then(text => {
-                console.error(`❌ Stats ${statType} error:`, text);
-                throw new Error(`HTTP ${response.status}`);
-            });
-        }
-    })
-    .then(data => {
-        console.log(`✅ Stats ${statType} data:`, data);
-        
-        const element = document.getElementById(elementId);
-        if (element) {
-            if (data.count !== undefined) {
-                element.textContent = data.count;
-            } else if (data.revenue !== undefined) {
-                element.textContent = `€${data.revenue}`;
+    AdminConfig.apiCall(`get-stats.php?stat=${statType}`)
+        .then(data => {
+            console.log(`✅ Stats ${statType} data:`, data);
+            
+            const element = document.getElementById(elementId);
+            if (element) {
+                if (data.count !== undefined) {
+                    element.textContent = data.count;
+                } else if (data.revenue !== undefined) {
+                    element.textContent = `€${data.revenue}`;
+                } else {
+                    element.textContent = JSON.stringify(data);
+                }
+                element.style.color = '';
             } else {
-                element.textContent = JSON.stringify(data);
+                console.warn(`⚠️ Element ar ID '${elementId}' nav atrasts`);
             }
-            element.style.color = '';
-        } else {
-            console.warn(`⚠️ Element ar ID '${elementId}' nav atrasts`);
-        }
-    })
-    .catch(error => {
-        console.error(`❌ Stats ${statType} failed:`, error);
-        const element = document.getElementById(elementId);
-        if (element) {
-            element.textContent = 'Kļūda';
-            element.style.color = '#f56565';
-        }
-    });
+        })
+        .catch(error => {
+            console.error(`❌ Stats ${statType} failed:`, error);
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = 'Kļūda';
+                element.style.color = '#f56565';
+            }
+        });
 }
 
 function updateStatsCards() {
@@ -159,83 +119,70 @@ function updateStatsCards() {
 function loadRecentBookings() {
     if (!debugAuth()) return;
     
-    const token = localStorage.getItem('admin_token');
-    
     const activeSection = document.querySelector('.section.active');
     const isDashboard = activeSection && activeSection.id === 'dashboard-section';
     const tbody = document.getElementById(isDashboard ? 'recent-bookings' : 'all-bookings');
     
+    console.log(`📋 Ielādē rezervācijas. Aktīvā sadaļa: ${activeSection?.id}, Tabula: ${tbody?.id}`);
+    
     if (!tbody) {
-        console.warn('⚠️ Rezervāciju tabula nav atrasta. Active section:', activeSection?.id);
+        console.warn(`⚠️ Rezervāciju tabula nav atrasta. Active section: ${activeSection?.id}`);
         return;
     }
     
     tbody.innerHTML = '<tr><td colspan="6">Ielādē...</td></tr>';
     
-    fetch('/api/admin/get-recent-bookings.php', {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.ok ? response.json() : Promise.reject(response))
-    .then(bookings => {
-        console.log('✅ Recent bookings data:', bookings);
-        window.lastBookingsData = bookings; // Saglabā globāli
-        
-        if (bookings.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6">Nav rezervāciju</td></tr>';
-            return;
-        }
-        
-        tbody.innerHTML = bookings.map(booking => `
-            <tr>
-                <td>${booking.client_name}</td>
-                <td>${booking.service}</td>
-                <td>${booking.date}</td>
-                <td>${booking.time}</td>
-                <td>
-                    <span class="badge badge-${getStatusClass(booking.status)}">
-                        ${getStatusText(booking.status)}
-                    </span>
-                </td>
-                <td>
-                    <button class="btn btn-sm btn-primary" onclick="editBooking(${booking.id})">Rediģēt</button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteBooking(${booking.id})">Dzēst</button>
-                </td>
-            </tr>
-        `).join('');
-    })
-    .catch(error => {
-        console.error('❌ Recent bookings failed:', error);
-        tbody.innerHTML = `<tr><td colspan="6" style="color: #f56565;">Kļūda ielādējot rezervācijas.</td></tr>`;
-    });
+    AdminConfig.apiCall('get-recent-bookings.php')
+        .then(bookings => {
+            console.log(`✅ Recent bookings data (${bookings.length} ieraksti):`, bookings);
+            window.lastBookingsData = bookings;
+            
+            if (bookings.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6">Nav rezervāciju</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = bookings.map(booking => `
+                <tr>
+                    <td>${booking.client_name}</td>
+                    <td>${booking.service}</td>
+                    <td>${booking.date}</td>
+                    <td>${booking.time}</td>
+                    <td>
+                        <span class="badge badge-${getStatusClass(booking.status)}">
+                            ${getStatusText(booking.status)}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="editBooking(${booking.id})">Rediģēt</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteBooking(${booking.id})">Dzēst</button>
+                    </td>
+                </tr>
+            `).join('');
+        })
+        .catch(error => {
+            console.error('❌ Recent bookings failed:', error);
+            tbody.innerHTML = `<tr><td colspan="6" style="color: #f56565;">Kļūda ielādējot rezervācijas.</td></tr>`;
+        });
 }
 
 function deleteBooking(id) {
     if (!confirm('Vai tiešām vēlies dzēst šo rezervāciju?')) return;
     
-    const token = localStorage.getItem('admin_token');
-    
-    fetch(`/api/admin/manage-bookings.php?action=delete&id=${id}`, {
-        method: 'GET',
-        headers: { 'Authorization': `Bearer ${token}` }
-    })
-    .then(response => response.ok ? response.json() : Promise.reject(response))
-    .then(data => {
-        if (data.success) {
-            showAlert('success', 'Rezervācija dzēsta veiksmīgi!');
-            loadRecentBookings();
-            updateStatsCards();
-        } else {
-            showAlert('danger', 'Kļūda dzēšot rezervāciju');
-        }
-    })
-    .catch(error => {
-        console.error('❌ Delete booking failed:', error);
-        showAlert('danger', 'Kļūda dzēšot rezervāciju: ' + error.message);
-    });
+    AdminConfig.apiCall(`manage-bookings.php?action=delete&id=${id}`)
+        .then(data => {
+            if (data.success) {
+                showAlert('success', 'Rezervācija dzēsta veiksmīgi!');
+                loadRecentBookings();
+                updateStatsCards();
+            } else {
+                showAlert('danger', 'Kļūda dzēšot rezervāciju');
+            }
+        })
+        .catch(error => {
+            console.error('❌ Delete booking failed:', error);
+            showAlert('danger', 'Kļūda dzēšot rezervāciju: ' + error.message);
+        });
 }
 
 function editBooking(id) {
@@ -255,33 +202,27 @@ function loadServicesData() {
     const servicesList = document.getElementById('services-list');
     if (!servicesList) return;
     
-    const token = localStorage.getItem('admin_token');
-    
-    fetch('/api/admin/get-services.php', {
-        headers: { 'Authorization': `Bearer ${token}` }
-    })
-    .then(response => response.json())
-    .then(services => {
-        // PIEVIENOTS: Saglabājam pakalpojumus globālā mainīgajā, lai varētu veikt pārbaudi
-        window.allServicesData = services;
+    AdminConfig.apiCall('get-services.php')
+        .then(services => {
+            window.allServicesData = services;
 
-        servicesList.innerHTML = services.map(service => `
-            <tr>
-                <td>${service.name}</td>
-                <td>€${service.price}</td>
-                <td>${service.duration} min</td>
-                <td><span class="badge badge-success">Aktīvs</span></td>
-                <td>
-                    <button class="btn btn-sm btn-primary" onclick="editService(${service.id})">Rediģēt</button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteService(${service.id})">Dzēst</button>
-                </td>
-            </tr>
-        `).join('');
-    })
-    .catch(error => {
-        console.error('❌ Load services failed:', error);
-        servicesList.innerHTML = '<tr><td colspan="5">Kļūda ielādējot pakalpojumus</td></tr>';
-    });
+            servicesList.innerHTML = services.map(service => `
+                <tr>
+                    <td>${service.name}</td>
+                    <td>€${service.price}</td>
+                    <td>${service.duration} min</td>
+                    <td><span class="badge badge-success">Aktīvs</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="editService(${service.id})">Rediģēt</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteService(${service.id})">Dzēst</button>
+                    </td>
+                </tr>
+            `).join('');
+        })
+        .catch(error => {
+            console.error('❌ Load services failed:', error);
+            servicesList.innerHTML = '<tr><td colspan="5">Kļūda ielādējot pakalpojumus</td></tr>';
+        });
 }
 
 function addService() {
@@ -294,7 +235,6 @@ function addService() {
         return;
     }
 
-    // PIEVIENOTS: Pārbaude, vai pakalpojums ar šādu nosaukumu jau eksistē
     if (window.allServicesData && window.allServicesData.some(service => service.name.toLowerCase() === name.toLowerCase())) {
         showAlert('danger', 'Pakalpojums ar šādu nosaukumu jau pastāv!');
         return;
@@ -305,54 +245,50 @@ function addService() {
     formData.append('price', price);
     formData.append('duration', duration);
     
-    const token = localStorage.getItem('admin_token');
-    
-    fetch('/api/admin/manage-services.php', {
+    const options = {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: formData
-    })
-    .then(response => response.ok ? response.json() : Promise.reject(response))
-    .then(data => {
-        if (data && data.success) {
-            hideAddServiceModal();
-            showAlert('success', `Pakalpojums "${name}" pievienots veiksmīgi!`);
-            loadServicesData();
-            updateStatsCards();
-            document.getElementById('add-service-form').reset();
-        } else {
-            showAlert('danger', data.error || data.message || 'Nezināma kļūda');
-        }
-    })
-    .catch(error => {
-        console.error('❌ Add service failed:', error);
-        showAlert('danger', 'Kļūda pievienojot pakalpojumu: ' + error.message);
-    });
+        body: formData,
+        headers: AdminConfig.getHeaders(true) // Tikai auth, bez Content-Type FormData
+    };
+    
+    // Noņem Content-Type, lai browser auto-set multipart/form-data
+    delete options.headers['Content-Type'];
+    
+    AdminConfig.apiCall('manage-services.php', options)
+        .then(data => {
+            if (data && data.success) {
+                hideAddServiceModal();
+                showAlert('success', `Pakalpojums "${name}" pievienots veiksmīgi!`);
+                loadServicesData();
+                updateStatsCards();
+                document.getElementById('add-service-form').reset();
+            } else {
+                showAlert('danger', data.error || data.message || 'Nezināma kļūda');
+            }
+        })
+        .catch(error => {
+            console.error('❌ Add service failed:', error);
+            showAlert('danger', 'Kļūda pievienojot pakalpojumu: ' + error.message);
+        });
 }
 
 function deleteService(id) {
     if (!confirm('Vai tiešām vēlies dzēst šo pakalpojumu?')) return;
     
-    const token = localStorage.getItem('admin_token');
-    
-    fetch(`/api/admin/manage-services.php?action=delete&id=${id}`, {
-        method: 'GET',
-        headers: { 'Authorization': `Bearer ${token}` }
-    })
-    .then(response => response.ok ? response.json() : Promise.reject(response))
-    .then(data => {
-        if (data.success) {
-            showAlert('success', 'Pakalpojums dzēsts veiksmīgi!');
-            loadServicesData();
-            updateStatsCards();
-        } else {
-            showAlert('danger', 'Kļūda dzēšot pakalpojumu');
-        }
-    })
-    .catch(error => {
-        console.error('❌ Delete service failed:', error);
-        showAlert('danger', 'Kļūda dzēšot pakalpojumu: ' + error.message);
-    });
+    AdminConfig.apiCall(`manage-services.php?action=delete&id=${id}`)
+        .then(data => {
+            if (data.success) {
+                showAlert('success', 'Pakalpojums dzēsts veiksmīgi!');
+                loadServicesData();
+                updateStatsCards();
+            } else {
+                showAlert('danger', 'Kļūda dzēšot pakalpojumu');
+            }
+        })
+        .catch(error => {
+            console.error('❌ Delete service failed:', error);
+            showAlert('danger', 'Kļūda dzēšot pakalpojumu: ' + error.message);
+        });
 }
 
 function editService(id) {
@@ -364,27 +300,52 @@ function editService(id) {
 // ========================================
 
 function showSection(sectionName) {
+    console.log(`🔄 Pārslēdzas uz sadaļu: ${sectionName}`);
+    
     document.querySelectorAll('.section').forEach(section => section.classList.remove('active'));
     document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
     
     const targetSection = document.getElementById(`${sectionName}-section`);
-    if (targetSection) targetSection.classList.add('active');
+    if (targetSection) {
+        targetSection.classList.add('active');
+        console.log(`✅ Sadaļa aktivizēta: ${sectionName}-section`);
+    } else {
+        console.error(`❌ Sadaļa nav atrasta: ${sectionName}-section`);
+    }
     
     const targetNav = document.querySelector(`[data-section="${sectionName}"]`);
-    if (targetNav) targetNav.classList.add('active');
+    if (targetNav) {
+        targetNav.classList.add('active');
+    }
     
     const titles = {
-        'dashboard': 'Kontrolpanelis', 'bookings': 'Rezervācijas', 'services': 'Pakalpojumi',
-        'schedule': 'Darba laiki', 'clients': 'Klienti', 'settings': 'Iestatījumi'
+        'dashboard': 'Kontrolpanelis', 
+        'bookings': 'Rezervācijas', 
+        'services': 'Pakalpojumi',
+        'schedule': 'Darba laiki', 
+        'clients': 'Klienti', 
+        'settings': 'Iestatījumi'
     };
     const pageTitle = document.getElementById('page-title');
-    if (pageTitle && titles[sectionName]) pageTitle.textContent = titles[sectionName];
+    if (pageTitle && titles[sectionName]) {
+        pageTitle.textContent = titles[sectionName];
+    }
     
     switch(sectionName) {
-        case 'schedule': loadScheduleData(); break;
-        case 'bookings': loadRecentBookings(); break;
-        case 'services': loadServicesData(); break; // PIEVIENOTS: ielādē pakalpojumus, kad atver sadaļu
-        case 'dashboard': updateStatsCards(); loadRecentBookings(); break;
+        case 'dashboard': 
+            updateStatsCards(); 
+            loadRecentBookings(); 
+            break;
+        case 'bookings': 
+            console.log('📅 Ielādē rezervāciju sadaļu');
+            loadRecentBookings(); 
+            break;
+        case 'services': 
+            loadServicesData(); 
+            break;
+        case 'schedule': 
+            loadScheduleData(); 
+            break;
     }
 }
 
@@ -396,33 +357,27 @@ function loadScheduleData() {
     const scheduleList = document.getElementById('schedule-list');
     if (!scheduleList) return;
     
-    const token = localStorage.getItem('admin_token');
-    
-    fetch('/api/admin/manage-hours.php?action=get', {
-        headers: { 'Authorization': `Bearer ${token}` }
-    })
-    .then(response => response.json())
-    .then(hours => {
-        // PIEVIENOTS: Saglabājam darba laikus globālā mainīgajā, lai varētu veikt pārbaudi
-        window.allSchedulesData = hours;
+    AdminConfig.apiCall('manage-hours.php?action=get')
+        .then(hours => {
+            window.allSchedulesData = hours;
 
-        scheduleList.innerHTML = hours.map(hour => `
-            <tr>
-                <td>${hour.formatted_date}</td>
-                <td>${hour.start_time}</td>
-                <td>${hour.end_time}</td>
-                <td><span class="badge badge-${hour.is_available ? 'success' : 'danger'}">${hour.is_available ? 'Pieejams' : 'Nepieejams'}</span></td>
-                <td>
-                    <button class="btn btn-sm btn-primary" onclick="editSchedule(${hour.id})">Rediģēt</button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteSchedule(${hour.id})">Dzēst</button>
-                </td>
-            </tr>
-        `).join('');
-    })
-    .catch(error => {
-        console.error('❌ Load schedule failed:', error);
-        scheduleList.innerHTML = '<tr><td colspan="5">Kļūda ielādējot darba laikus</td></tr>';
-    });
+            scheduleList.innerHTML = hours.map(hour => `
+                <tr>
+                    <td>${hour.formatted_date}</td>
+                    <td>${hour.start_time}</td>
+                    <td>${hour.end_time}</td>
+                    <td><span class="badge badge-${hour.is_available ? 'success' : 'danger'}">${hour.is_available ? 'Pieejams' : 'Nepieejams'}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="editSchedule(${hour.id})">Rediģēt</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteSchedule(${hour.id})">Dzēst</button>
+                    </td>
+                </tr>
+            `).join('');
+        })
+        .catch(error => {
+            console.error('❌ Load schedule failed:', error);
+            scheduleList.innerHTML = '<tr><td colspan="5">Kļūda ielādējot darba laikus</td></tr>';
+        });
 }
 
 function addSchedule() {
@@ -441,9 +396,6 @@ function addSchedule() {
         return;
     }
 
-    // PIEVIENOTS: Pārbaude, vai darba laiks šim datumam jau eksistē
-    // Piezīme: Šī pārbaude pieņem, ka `date` lauks no API ir 'YYYY-MM-DD' formātā.
-    // Ja jūsu API atgriež citu datuma formātu, šī rinda ir jāpielāgo.
     if (window.allSchedulesData && window.allSchedulesData.some(schedule => schedule.date === date)) {
         showAlert('danger', 'Šim datumam jau ir pievienots darba laiks!');
         return;
@@ -456,52 +408,46 @@ function addSchedule() {
     formData.append('end_time', end);
     formData.append('is_available', available ? '1' : '0');
     
-    const token = localStorage.getItem('admin_token');
-    
-    fetch('/api/admin/manage-hours.php', {
+    const options = {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: formData
-    })
-    .then(response => response.ok ? response.json() : Promise.reject(response))
-    .then(data => {
-        if (data && data.success) {
-            hideAddScheduleModal();
-            showAlert('success', 'Darba laiks pievienots veiksmīgi!');
-            loadScheduleData();
-            document.getElementById('add-schedule-form').reset();
-        } else {
-            showAlert('danger', data.error || data.message || 'Nezināma kļūda');
-        }
-    })
-    .catch(error => {
-        console.error('❌ Add schedule failed:', error);
-        showAlert('danger', 'Kļūda pievienojot darba laiku: ' + error.message);
-    });
+        body: formData,
+        headers: AdminConfig.getHeaders(true)
+    };
+    delete options.headers['Content-Type'];
+    
+    AdminConfig.apiCall('manage-hours.php', options)
+        .then(data => {
+            if (data && data.success) {
+                hideAddScheduleModal();
+                showAlert('success', 'Darba laiks pievienots veiksmīgi!');
+                loadScheduleData();
+                document.getElementById('add-schedule-form').reset();
+            } else {
+                showAlert('danger', data.error || data.message || 'Nezināma kļūda');
+            }
+        })
+        .catch(error => {
+            console.error('❌ Add schedule failed:', error);
+            showAlert('danger', 'Kļūda pievienojot darba laiku: ' + error.message);
+        });
 }
 
 function deleteSchedule(id) {
     if (!confirm('Vai tiešām vēlies dzēst šo darba laiku?')) return;
     
-    const token = localStorage.getItem('admin_token');
-    
-    fetch(`/api/admin/manage-hours.php?action=delete&id=${id}`, {
-        method: 'GET',
-        headers: { 'Authorization': `Bearer ${token}` }
-    })
-    .then(response => response.ok ? response.json() : Promise.reject(response))
-    .then(data => {
-        if (data.success) {
-            showAlert('success', 'Darba laiks dzēsts veiksmīgi!');
-            loadScheduleData();
-        } else {
-            showAlert('danger', 'Kļūda dzēšot darba laiku');
-        }
-    })
-    .catch(error => {
-        console.error('❌ Delete schedule failed:', error);
-        showAlert('danger', 'Kļūda dzēšot darba laiku: ' + error.message);
-    });
+    AdminConfig.apiCall(`manage-hours.php?action=delete&id=${id}`)
+        .then(data => {
+            if (data.success) {
+                showAlert('success', 'Darba laiks dzēsts veiksmīgi!');
+                loadScheduleData();
+            } else {
+                showAlert('danger', 'Kļūda dzēšot darba laiku');
+            }
+        })
+        .catch(error => {
+            console.error('❌ Delete schedule failed:', error);
+            showAlert('danger', 'Kļūda dzēšot darba laiku: ' + error.message);
+        });
 }
 
 function editSchedule(id) {
@@ -556,8 +502,7 @@ function getStatusText(status) {
 
 function logout() {
     if (confirm('Vai tiešām vēlies iziet?')) {
-        localStorage.removeItem('admin_token');
-        window.location.href = '/admin/login.php';
+        AdminConfig.logout();
     }
 }
 
@@ -566,12 +511,26 @@ function toggleMobileMenu() {
 }
 
 // ========================================
-// 10. DEBUG RĪKI (Nemainīts)
+// 10. DEBUG RĪKI
 // ========================================
 
-function addTestButtons() { /* ... nemainīts kods ... */ }
-function showDebugInfo() { /* ... nemainīts kods ... */ }
-
+function addTestButtons() {
+    const container = document.querySelector('.content-header');
+    if (!container || document.getElementById('debug-buttons')) return;
+    
+    const debugDiv = document.createElement('div');
+    debugDiv.id = 'debug-buttons';
+    debugDiv.style.cssText = 'margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;';
+    
+    debugDiv.innerHTML = `
+        <button onclick="testAPIConnection()" class="btn btn-sm btn-warning">🧪 Test API</button>
+        <button onclick="updateStatsCards()" class="btn btn-sm btn-info">📊 Reload Stats</button>
+        <button onclick="loadRecentBookings()" class="btn btn-sm btn-info">📅 Reload Bookings</button>
+        <button onclick="AdminConfig.debug()" class="btn btn-sm btn-secondary">🔍 Debug Config</button>
+    `;
+    
+    container.appendChild(debugDiv);
+}
 
 // ========================================
 // 11. INICIALIZĀCIJA
@@ -581,10 +540,13 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Admin panel ielādējas...');
     if (!debugAuth()) return;
     
+    console.log('🔗 Pievienojam navigācijas klausītājus...');
     document.querySelectorAll('.nav-link').forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
-            showSection(this.getAttribute('data-section'));
+            const section = this.getAttribute('data-section');
+            console.log(`🖱️ Noklikšķināts uz: ${section}`);
+            showSection(section);
         });
     });
     
@@ -604,17 +566,20 @@ document.addEventListener('DOMContentLoaded', function() {
         addSchedule();
     });
     
-    // Ielādē sākuma datus
+    console.log('📊 Ielādē sākuma datus...');
     updateStatsCards();
     loadRecentBookings();
-    loadServicesData(); // Ielādējam datus fonā, lai tie būtu pieejami pārbaudēm
-    loadScheduleData(); // Ielādējam datus fonā, lai tie būtu pieejami pārbaudēm
+    loadServicesData();
+    loadScheduleData();
     
-    console.log('✅ Admin panel gatavs');
+    showSection('dashboard');
+    
+    console.log('✅ Admin panel gatavs un navigācija darbojas');
+    setTimeout(addTestButtons, 2000);
 });
 
 // ========================================
-// 12. GLOBĀLO FUNKCIJU EKSPORTS (Nemainīts)
+// 12. GLOBĀLO FUNKCIJU EKSPORTS
 // ========================================
 
 window.debugAuth = debugAuth;
@@ -626,8 +591,8 @@ window.addTestButtons = addTestButtons;
 window.showSection = showSection;
 window.addService = addService;
 window.deleteService = deleteService;
-window.editService = editService; // Pievienots, lai atbilstu oriģinālam
-window.loadServicesData = loadServicesData; // Pievienots, lai atbilstu oriģinālam
+window.editService = editService;
+window.loadServicesData = loadServicesData;
 window.loadScheduleData = loadScheduleData;
 window.addSchedule = addSchedule;
 window.deleteSchedule = deleteSchedule;
@@ -644,6 +609,5 @@ window.showEditBookingModal = showEditBookingModal;
 window.hideEditBookingModal = hideEditBookingModal;
 window.logout = logout;
 window.toggleMobileMenu = toggleMobileMenu;
-window.showDebugInfo = showDebugInfo;
 window.getStatusClass = getStatusClass;
 window.getStatusText = getStatusText;

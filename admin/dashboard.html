@@ -82,7 +82,7 @@
                 </div>
                 <div class="stats-card">
                     <h3>Šīs nedēļas ieņēmumi</h3>
-                  <div class="number" id="weekly-revenue">€1,240</div>
+                    <div class="number" id="weekly-revenue">€1,240</div>
                     <div class="change positive">+8.2%</div>
                 </div>
                 <div class="stats-card">
@@ -138,18 +138,7 @@
             </div>
         </div>
 
-        <!-- PAKALPOJUMU SADAĻA -->
-        <div id="services-section" class="section">
-            <div class="card">
-                <div class="card-header">
-                    <h2>💅 Pakalpojumi</h2>
-                </div>
-                <div class="card-body">
-                    <!-- Pievienošanas poga -->
-                    <button class="btn btn-primary" onclick="showAddServiceModal()">
-                        ➕ Pievienot pakalpojumu
-                    </button>
-                 <!-- REZERVĀCIJU SADAĻA -->
+        <!-- REZERVĀCIJU SADAĻA - FIKSĒTS ID! -->
         <div id="bookings-section" class="section">
             <div class="card">
                 <div class="card-header">
@@ -169,13 +158,26 @@
                                 </tr>
                             </thead>
                             <tbody id="all-bookings">
-                                <!-- Rezervācijas tiks ielādētas šeit -->
+                                <!-- FIKSĒTS: all-bookings nevis recent-bookings -->
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- PAKALPOJUMU SADAĻA -->
+        <div id="services-section" class="section">
+            <div class="card">
+                <div class="card-header">
+                    <h2>💅 Pakalpojumi</h2>
+                </div>
+                <div class="card-body">
+                    <!-- Pievienošanas poga -->
+                    <button class="btn btn-primary" onclick="showAddServiceModal()">
+                        ➕ Pievienot pakalpojumu
+                    </button>
+                    
                     <!-- Pakalpojumu tabula -->
                     <div class="table-responsive">
                         <table class="table">
@@ -396,35 +398,6 @@
         </div>
     </div>
 
-    <!-- Pakalpojuma rediģēšanas modāls -->
-    <div id="edit-service-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">✏️ Rediģēt pakalpojumu</h3>
-                <button class="close-btn" onclick="hideEditServiceModal()">&times;</button>
-            </div>
-            <form id="edit-service-form">
-                <input type="hidden" id="edit-service-id">
-                <div class="form-group">
-                    <label class="form-label">Pakalpojuma nosaukums</label>
-                    <input type="text" class="form-control" id="edit-service-name" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Cena (EUR)</label>
-                    <input type="number" class="form-control" id="edit-service-price" step="0.01" min="0" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Ilgums (minūtes)</label>
-                    <input type="number" class="form-control" id="edit-service-duration" min="1" required>
-                </div>
-                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
-                    <button type="button" class="btn btn-secondary" onclick="hideEditServiceModal()">Atcelt</button>
-                    <button type="submit" class="btn btn-primary">💾 Saglabāt</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <!-- Rezervācijas rediģēšanas modāls -->
     <div id="edit-booking-modal" class="modal">
         <div class="modal-content">
@@ -477,95 +450,8 @@
         </div>
     </div>
 
-    <!-- Iekļauj admin JavaScript failu -->
-    <script src="admin.js"></script>
-    
-    <script>
-        // Papildu funkcijas modāļiem un navigācijai
-        
-        // Mobilās izvēlnes pārslēgšana
-        function toggleMobileMenu() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('active');
-        }
-
-        // Rediģēšanas modāļu funkcijas
-        function showEditServiceModal(service) {
-            const modal = document.getElementById('edit-service-modal');
-            document.getElementById('edit-service-id').value = service.id;
-            document.getElementById('edit-service-name').value = service.name;
-            document.getElementById('edit-service-price').value = service.price;
-            document.getElementById('edit-service-duration').value = service.duration;
-            modal.classList.add('active');
-        }
-
-        function hideEditServiceModal() {
-            document.getElementById('edit-service-modal').classList.remove('active');
-        }
-
-        function showEditBookingModal(booking) {
-            const modal = document.getElementById('edit-booking-modal');
-            document.getElementById('edit-booking-id').value = booking.id;
-            document.getElementById('edit-booking-client').value = booking.clientName;
-            document.getElementById('edit-booking-phone').value = booking.clientPhone;
-            document.getElementById('edit-booking-service').value = booking.service;
-            document.getElementById('edit-booking-date').value = booking.date;
-            document.getElementById('edit-booking-time').value = booking.time;
-            document.getElementById('edit-booking-status').value = booking.status;
-            document.getElementById('edit-booking-comment').value = booking.comment || '';
-            
-            // Aizpilda pakalpojumu izvēlni
-            const serviceSelect = document.getElementById('edit-booking-service');
-            serviceSelect.innerHTML = '<option value="">Izvēlies pakalpojumu</option>';
-            // Šeit būtu jāielādē pakalpojumi no mockData vai API
-            
-            modal.classList.add('active');
-        }
-
-        function hideEditBookingModal() {
-            document.getElementById('edit-booking-modal').classList.remove('active');
-        }
-
-        // Funkciju eksportēšana globālajam scope
-        window.toggleMobileMenu = toggleMobileMenu;
-        window.showEditServiceModal = showEditServiceModal;
-        window.hideEditServiceModal = hideEditServiceModal;
-        window.showEditBookingModal = showEditBookingModal;
-        window.hideEditBookingModal = hideEditBookingModal;
-        
-        // CSS animāciju pievienošana
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideIn {
-                from { transform: translateX(100%); opacity: 0; }
-                to { transform: translateX(0); opacity: 1; }
-            }
-            @keyframes slideOut {
-                from { transform: translateX(0); opacity: 1; }
-                to { transform: translateX(100%); opacity: 0; }
-            }
-        `;
-        document.head.appendChild(style);
-    </script>
-    <script src="admin.js"></script>
-    <script>
-// Test pogas pievienošana automātiski
-setTimeout(function() {
-    addTestButtons();
-    console.log('Test pogas pievienotas automātiski');
-}, 3000);
-
-</script>
-<button onclick="showStatsInfo()" class="btn btn-sm btn-warning">Show Stats Info</button>
-
-<script>
-function showStatsInfo() {
-    let info = '';
-    document.querySelectorAll('.stats-card .number').forEach((el, i) => {
-        info += `Card ${i}: ID="${el.id}", Text="${el.textContent}"\n`;
-    });
-    alert('Stats Elements:\n' + info);
-}
-</script>
+    <!-- IEKĻAUJ JAVASCRIPT FAILUS PAREIZAJĀ SECĪBĀ -->
+    <script src="config.js"></script>  <!-- PIRMAIS: Universālā konfigurācija -->
+    <script src="admin.js"></script>   <!-- OTRAIS: Admin funkcionalitāte -->
 </body>
 </html>

@@ -1,0 +1,4 @@
+# Izveido jauno failu ar diagnostikas kodu
+cat > admin.js << 'EOF'
+# [Šeit ielīmē visu kodu no artifacts]
+EOF

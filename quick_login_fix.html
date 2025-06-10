@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quick Login Fix</title>
+</head>
+<body>
+    <h2>🔧 Admin Token Fiksējums</h2>
+    
+    <button onclick="clearAndRelogin()">🔄 Notīrīt un pieteikties atkal</button>
+    <button onclick="debugCurrentToken()">🔍 Debug pašreizējais token</button>
+    <button onclick="testDirectAPI()">🧪 Testēt API tieši</button>
+    
+    <div id="output"></div>
+    
+    <script>
+        function clearAndRelogin() {
+            console.log('🔄 Notīra localStorage un novirza uz login...');
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.href = '/admin/login.php';
+        }
+        
+        function debugCurrentToken() {
+            const token = localStorage.getItem('admin_token');
+            const output = document.getElementById('output');
+            
+            const info = `
+                <h3>🔍 Token Debug:</h3>
+                <p><strong>Token:</strong> ${token || 'NAV'}</p>
+                <p><strong>Token garums:</strong> ${token ? token.length : 0}</p>
+                <p><strong>Pirmie 20 simboli:</strong> ${token ? token.substring(0, 20) : 'NAV'}</p>
+                <p><strong>URL:</strong> ${window.location.href}</p>
+                <p><strong>localStorage keys:</strong> ${Object.keys(localStorage).join(', ')}</p>
+            `;
+            
+            output.innerHTML = info;
+            console.log('Token info:', { token, length: token?.length });
+        }
+        
+        async function testDirectAPI() {
+            const token = localStorage.getItem('admin_token');
+            const output = document.getElementById('output');
+            
+            if (!token) {
+                output.innerHTML = '<p style="color: red;">❌ Nav token localStorage!</p>';
+                return;
+            }
+            
+            try {
+                console.log('🧪 Testē API ar token:', token.substring(0, 10) + '...');
+                
+                const response = await fetch('/api/admin/get-stats.php?stat=today_bookings', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const responseText = await response.text();
+                
+                output.innerHTML = `
+                    <h3>🧪 API Test Result:</h3>
+                    <p><strong>Status:</strong> ${response.status} ${response.statusText}</p>
+                    <p><strong>Headers:</strong> ${JSON.stringify([...response.headers.entries()])}</p>
+                    <pre style="background: #f5f5f5; padding: 1rem; border-radius: 4px; overflow-x: auto;">${responseText}</pre>
+                `;
+                
+                console.log('API Response:', { status: response.status, text: responseText });
+                
+            } catch (error) {
+                output.innerHTML = `<p style="color: red;">❌ API Test Error: ${error.message}</p>`;
+                console.error('API Test failed:', error);
+            }
+        }
+        
+        // Auto-debug palaižot lapu
+        window.onload = function() {
+            debugCurrentToken();
+        };
+    </script>
+</body>
+</html>
