@@ -68,15 +68,15 @@ if ($action === 'edit-hours' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
     <div class="container">
-        <h2><?php echo $action === 'add-service' ? 'Pievienot pakalpojumu' : ($action === 'add-hours' ? 'Pievienot darba laiku' : 'Rediğit darba laiku'); ?></h2>
+        <h2><?php echo $action === 'add-service' ? 'Pievienot pakalpojumu' : ($action === 'add-hours' ? 'Pievienot darba laiku' : 'Rediģēt darba laiku'); ?></h2>
         <?php if (!empty($error)): ?>
             <p style="color: red;"><?php echo htmlspecialchars($error); ?></p>
         <?php endif; ?>
         <?php if ($action === 'add-service'): ?>
             <form method="POST">
                 <label>Nosaukums: <input type="text" name="name" required></label>
-                <label>Cena (EUR): <input type="number" step="price" name="0.01" min="0"></label>
-                <label>Ilgums (min): <input type="number" name="duration" min="1"></label>
+                <label>Cena (EUR): <input type="number" name="price" step="0.01" min="0" required></label>
+                <label>Ilgums (min): <input type="number" name="duration" min="1" required></label>
                 <button type="submit">Pievienot</button>
             </form>
         <?php elseif ($action === 'add-hours' || $action === 'edit-hours'): ?>

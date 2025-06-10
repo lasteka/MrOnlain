@@ -82,7 +82,7 @@
                 </div>
                 <div class="stats-card">
                     <h3>Šīs nedēļas ieņēmumi</h3>
-                    <div class="number">€1,240</div>
+                  <div class="number" id="weekly-revenue">€1,240</div>
                     <div class="change positive">+8.2%</div>
                 </div>
                 <div class="stats-card">
@@ -149,7 +149,33 @@
                     <button class="btn btn-primary" onclick="showAddServiceModal()">
                         ➕ Pievienot pakalpojumu
                     </button>
-                    
+                 <!-- REZERVĀCIJU SADAĻA -->
+        <div id="bookings-section" class="section">
+            <div class="card">
+                <div class="card-header">
+                    <h2>📅 Visas rezervācijas</h2>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Klients</th>
+                                    <th>Pakalpojums</th>
+                                    <th>Datums</th>
+                                    <th>Laiks</th>
+                                    <th>Statuss</th>
+                                    <th>Darbības</th>
+                                </tr>
+                            </thead>
+                            <tbody id="all-bookings">
+                                <!-- Rezervācijas tiks ielādētas šeit -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
                     <!-- Pakalpojumu tabula -->
                     <div class="table-responsive">
                         <table class="table">
@@ -521,5 +547,25 @@
         `;
         document.head.appendChild(style);
     </script>
+    <script src="admin.js"></script>
+    <script>
+// Test pogas pievienošana automātiski
+setTimeout(function() {
+    addTestButtons();
+    console.log('Test pogas pievienotas automātiski');
+}, 3000);
+
+</script>
+<button onclick="showStatsInfo()" class="btn btn-sm btn-warning">Show Stats Info</button>
+
+<script>
+function showStatsInfo() {
+    let info = '';
+    document.querySelectorAll('.stats-card .number').forEach((el, i) => {
+        info += `Card ${i}: ID="${el.id}", Text="${el.textContent}"\n`;
+    });
+    alert('Stats Elements:\n' + info);
+}
+</script>
 </body>
 </html>

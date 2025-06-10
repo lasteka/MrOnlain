@@ -1,0 +1,269 @@
+// admin.js diagnostikas un labošanas funkcijas
+
+// 1. DEBUGGING FUNKCIJAS
+function debugAuth() {
+    const token = localStorage.getItem('admin_token');
+    console.log('🔍 Admin token:', token ? `${token.substring(0, 10)}...` : 'Nav atrasts');
+    
+    if (!token) {
+        console.log('❌ Nav admin token - novirzi uz login lapu');
+        window.location.href = '/admin/login.php';
+        return false;
+    }
+    return true;
+}
+
+function testAPIConnection() {
+    if (!debugAuth()) return;
+    
+    const token = localStorage.getItem('admin_token');
+    
+    fetch('/api/admin/get-stats.php?stat=today_bookings', {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        console.log('📡 API Response status:', response.status);
+        if (response.ok) {
+            return response.json();
+        } else {
+            return response.text().then(text => {
+                console.error('❌ API Error:', text);
+                throw new Error(`HTTP ${response.status}: ${text}`);
+            });
+        }
+    })
+    .then(data => {
+        console.log('✅ API Test uspešīgs:', data);
+        showAlert('success', 'API savienojums darbojas!');
+    })
+    .catch(error => {
+        console.error('❌ API Test failed:', error);
+        showAlert('danger', 'API savienojuma kļūda: ' + error.message);
+    });
+}
+
+// 2. ALERT SISTĒMA (ja nav)
+function showAlert(type, message) {
+    // Izveido alert elementu
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type}`;
+    alertDiv.style.cssText = `
+        position: fixed; 
+        top: 20px; 
+        right: 20px; 
+        z-index: 9999; 
+        padding: 1rem 1.5rem; 
+        border-radius: 8px; 
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        max-width: 400px;
+        animation: slideInRight 0.3s ease;
+    `;
+    
+    alertDiv.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span>${message}</span>
+            <button onclick="this.parentElement.parentElement.remove()" style="background: none; border: none; color: inherit; cursor: pointer; margin-left: 1rem; font-size: 1.2rem;">&times;</button>
+        </div>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    // Auto-remove pēc 5 sekundēm
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+
+// 3. STATISTIKAS IELĀDE (FIXED VERSION)
+function loadStatsCard(statType, elementId) {
+    if (!debugAuth()) return;
+    
+    const token = localStorage.getItem('admin_token');
+    
+    fetch(`/api/admin/get-stats.php?stat=${statType}`, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        console.log(`📊 Stats ${statType} response:`, response.status);
+        
+        if (response.ok) {
+            return response.json();
+        } else {
+            return response.text().then(text => {
+                console.error(`❌ Stats ${statType} error:`, text);
+                throw new Error(`HTTP ${response.status}`);
+            });
+        }
+    })
+    .then(data => {
+        console.log(`✅ Stats ${statType} data:`, data);
+        
+        const element = document.getElementById(elementId);
+        if (element) {
+            if (data.count !== undefined) {
+                element.textContent = data.count;
+            } else if (data.revenue !== undefined) {
+                element.textContent = `€${data.revenue}`;
+            } else {
+                element.textContent = JSON.stringify(data);
+            }
+        } else {
+            console.warn(`⚠️ Element ar ID '${elementId}' nav atrasts`);
+        }
+    })
+    .catch(error => {
+        console.error(`❌ Stats ${statType} failed:`, error);
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.textContent = 'Kļūda';
+            element.style.color = '#f56565';
+        }
+    });
+}
+
+// 4. VISU STATISTIKU IELĀDE
+function updateStatsCards() {
+    console.log('📊 Ielādē visas statistikas...');
+    
+    loadStatsCard('today_bookings', 'today-bookings');
+    loadStatsCard('total_clients', 'total-clients');
+    loadStatsCard('active_services', 'active-services');
+    loadStatsCard('weekly_revenue', 'weekly-revenue');
+}
+
+// 5. REZERVĀCIJU IELĀDE (FIXED VERSION)
+function loadRecentBookings() {
+    if (!debugAuth()) return;
+    
+    const token = localStorage.getItem('admin_token');
+    const tbody = document.getElementById('recent-bookings');
+    
+    if (!tbody) {
+        console.warn('⚠️ recent-bookings tabula nav atrasta');
+        return;
+    }
+    
+    tbody.innerHTML = '<tr><td colspan="6">Ielādē...</td></tr>';
+    
+    fetch('/api/admin/get-recent-bookings.php', {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        console.log('📅 Recent bookings response:', response.status);
+        
+        if (response.ok) {
+            return response.json();
+        } else {
+            return response.text().then(text => {
+                console.error('❌ Recent bookings error:', text);
+                throw new Error(`HTTP ${response.status}: ${text}`);
+            });
+        }
+    })
+    .then(bookings => {
+        console.log('✅ Recent bookings data:', bookings);
+        
+        if (bookings.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6">Nav rezervāciju</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = bookings.map(booking => `
+            <tr>
+                <td>${booking.client_name}</td>
+                <td>${booking.service}</td>
+                <td>${booking.date}</td>
+                <td>${booking.time}</td>
+                <td>
+                    <span class="badge badge-${getStatusClass(booking.status)}">
+                        ${getStatusText(booking.status)}
+                    </span>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-primary" onclick="editBooking(${booking.id})">Rediģēt</button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteBooking(${booking.id})">Dzēst</button>
+                </td>
+            </tr>
+        `).join('');
+    })
+    .catch(error => {
+        console.error('❌ Recent bookings failed:', error);
+        tbody.innerHTML = `<tr><td colspan="6" style="color: #f56565;">Kļūda: ${error.message}</td></tr>`;
+    });
+}
+
+// 6. PALĪGFUNKCIJAS
+function getStatusClass(status) {
+    switch(status) {
+        case 'confirmed': return 'success';
+        case 'cancelled': return 'danger';
+        case 'pending': return 'warning';
+        default: return 'warning';
+    }
+}
+
+function getStatusText(status) {
+    switch(status) {
+        case 'confirmed': return 'Apstiprināts';
+        case 'cancelled': return 'Atcelts';
+        case 'pending': return 'Gaida';
+        default: return 'Gaida';
+    }
+}
+
+// 7. INICIALIZĀCIJA KAD LAPA IELĀDĒJAS
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Admin panel ielādējas...');
+    
+    // Pārbauda autentifikāciju
+    if (!debugAuth()) return;
+    
+    // Ielādē datus
+    updateStatsCards();
+    loadRecentBookings();
+    
+    console.log('✅ Admin panel gatavs');
+});
+
+// 8. TEST POGAS PIEVIENOŠANA (ĪSLAICĪGI)
+function addTestButtons() {
+    const header = document.querySelector('.content-header');
+    if (header) {
+        const testDiv = document.createElement('div');
+        testDiv.innerHTML = `
+            <div style="margin: 1rem 0; padding: 1rem; background: rgba(255,255,255,0.9); border-radius: 8px;">
+                <h4>🔧 Debug rīki:</h4>
+                <button onclick="testAPIConnection()" class="btn btn-sm btn-primary">Test API</button>
+                <button onclick="updateStatsCards()" class="btn btn-sm btn-success">Reload Stats</button>
+                <button onclick="loadRecentBookings()" class="btn btn-sm btn-warning">Reload Bookings</button>
+                <button onclick="console.clear()" class="btn btn-sm btn-secondary">Clear Console</button>
+            </div>
+        `;
+        header.after(testDiv);
+    }
+}
+
+// Pievieno test pogas (izsauc konsola: addTestButtons())
+// addTestButtons();
+
+// 9. EKSPORTĒ FUNKCIJAS
+window.debugAuth = debugAuth;
+window.testAPIConnection = testAPIConnection;
+window.showAlert = showAlert;
+window.updateStatsCards = updateStatsCards;
+window.loadRecentBookings = loadRecentBookings;
+window.addTestButtons = addTestButtons;

@@ -314,4 +314,125 @@ function getAuthenticatedAdmin() {
     return false;
 }
 
+// Pievieno šīs funkcijas tavā esošajā /core/auth.php failā (beigās)
+
+/**
+ * Uzlabota Authorization header iegūšana (bez .htaccess)
+ */
+function getAuthorizationHeader() {
+    $token = null;
+    
+    // 1. Mēģina $_SERVER['HTTP_AUTHORIZATION']
+    if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+        $token = trim($_SERVER['HTTP_AUTHORIZATION']);
+    }
+    
+    // 2. Mēģina REDIRECT_HTTP_AUTHORIZATION (Apache rewrite)
+    elseif (isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
+        $token = trim($_SERVER['REDIRECT_HTTP_AUTHORIZATION']);
+    }
+    
+    // 3. Mēģina getallheaders() funkciju (ja pieejama)
+    elseif (function_exists('getallheaders')) {
+        $headers = getallheaders();
+        if (isset($headers['Authorization'])) {
+            $token = trim($headers['Authorization']);
+        } elseif (isset($headers['authorization'])) {
+            $token = trim($headers['authorization']);
+        }
+    }
+    
+    // 4. Mēģina meklēt jebkuru $_SERVER mainīgo ar 'authorization'
+    if (!$token) {
+        foreach ($_SERVER as $key => $value) {
+            if (stripos($key, 'authorization') !== false && !empty($value)) {
+                $token = trim($value);
+                break;
+            }
+        }
+    }
+    
+    // Debug log (tikai ja nav OPTIONS pieprasījums)
+    if (!$token && $_SERVER['REQUEST_METHOD'] !== 'OPTIONS') {
+        error_log('❌ Authorization header nav atrasts');
+        error_log('Available $_SERVER headers: ' . print_r(array_filter($_SERVER, function($key) {
+            return strpos($key, 'HTTP_') === 0 || stripos($key, 'auth') !== false;
+        }, ARRAY_FILTER_USE_KEY), true));
+    }
+    
+    return $token;
+}
+
+/**
+ * Uzlabota admin autentifikācija (aizstāj esošo getAuthenticatedAdmin)
+ */
+function getAuthenticatedAdminImproved() {
+    global $pdo;
+    
+    // Pārbauda Authorization header ar uzlaboto metodi
+    $token = getAuthorizationHeader();
+    
+    if ($token && str_starts_with($token, 'Bearer ')) {
+        $rawToken = substr($token, 7);
+        $admin = getAdminByToken($pdo, $rawToken);
+        if ($admin) {
+            return $admin;
+        }
+    }
+    
+    // Pārbauda session kā fallback
+    if (isAdminLoggedIn()) {
+        return getCurrentAdmin();
+    }
+    
+    return false;
+}
+
+/**
+ * Uzlabota lietotāja autentifikācija (aizstāj esošo getAuthenticatedUser)
+ */
+function getAuthenticatedUserImproved() {
+    global $pdo;
+    
+    // Pārbauda Authorization header ar uzlaboto metodi
+    $token = getAuthorizationHeader();
+    
+    if ($token && str_starts_with($token, 'Bearer ')) {
+        $rawToken = substr($token, 7);
+        $user = getUserByToken($pdo, $rawToken);
+        if ($user) {
+            return $user;
+        }
+    }
+    
+    // Pārbauda session kā fallback
+    if (isUserLoggedIn()) {
+        return getCurrentUser();
+    }
+    
+    return false;
+}
+
+/**
+ * Vienkārša admin validācijas funkcija API failiem
+ */
+function validateAdminAuth() {
+    $admin = getAuthenticatedAdminImproved();
+    if (!$admin) {
+        sendError(401, 'Nav autorizēts - nepieciešama admin piekļuve');
+    }
+    return $admin;
+}
+
+/**
+ * Vienkārša lietotāja validācijas funkcija API failiem
+ */
+function validateUserAuth() {
+    $user = getAuthenticatedUserImproved();
+    if (!$user) {
+        sendError(401, 'Nav autorizēts - nepieciešama autentifikācija');
+    }
+    return $user;
+}
 ?>
+
