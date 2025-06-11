@@ -1,7 +1,8 @@
 <?php
 // /api/bookings/get-user-bookings.php
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: http://localhost');header('Access-Control-Allow-Methods: GET, OPTIONS');
+header('Access-Control-Allow-Origin: http://localhost');
+header('Access-Control-Allow-Methods: GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {

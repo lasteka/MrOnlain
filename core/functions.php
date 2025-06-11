@@ -403,4 +403,26 @@ function dd($var) {
     echo '</pre>';
     die();
 }
+/**
+ * Debug funkcija - pārbauda token datubāzē
+ */
+function debugTokenInDatabase($pdo, $token) {
+    try {
+        $userStmt = $pdo->prepare('SELECT id, name FROM users WHERE token = ?');
+        $userStmt->execute([$token]);
+        $user = $userStmt->fetch(PDO::FETCH_ASSOC);
+        
+        $adminStmt = $pdo->prepare('SELECT id, name FROM admins WHERE token = ?');
+        $adminStmt->execute([$token]);
+        $admin = $adminStmt->fetch(PDO::FETCH_ASSOC);
+        
+        error_log("DEBUG token - User: " . ($user ? "found ID:{$user['id']}" : "not found"));
+        error_log("DEBUG token - Admin: " . ($admin ? "found ID:{$admin['id']}" : "not found"));
+        
+        return ['user' => $user, 'admin' => $admin];
+    } catch (PDOException $e) {
+        error_log('DEBUG token error: ' . $e->getMessage());
+        return false;
+    }
+}
 ?>

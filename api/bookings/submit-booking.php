@@ -2,7 +2,8 @@
 // /api/bookings/submit-booking.php - ar debug info
 session_start();
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: http://localhost');header('Access-Control-Allow-Methods: POST, OPTIONS');
+header('Access-Control-Allow-Origin: http://localhost');
+header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -57,7 +58,7 @@ error_log("DEBUG submit-booking - Raw token: " . substr($rawToken, 0, 10) . "...
 
 // Debug token datubāzē
 if (function_exists('debugTokenInDatabase')) {
-    debugTokenInDatabase($pdo, $rawToken);
+    debugTokenInDatabase($pdo, $rawToken);//pazudis jamekle??????
 }
 
 // Pārbauda vai funkcijas eksistē
