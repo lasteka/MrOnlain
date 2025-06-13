@@ -338,4 +338,4 @@ SELECT
     (SELECT COUNT(*) FROM users) as users_count,
     (SELECT COUNT(*) FROM working_hours) as working_hours_count;
 
-SELECT '✅ Datubāze veiksmīgi atjaunināta ar visām trūkstošajām kolonnām un demo datiem!' as status;
+SELECT '✅ Datubāze veiksmīgi atjaunināta ar visām trūkstošajām kolonnām un demo datiem!' as status;# MR.-ONLAIN
