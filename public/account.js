@@ -1,4 +1,4 @@
-// account.js - PILNĪGS FINĀLAIS FAILS ar visām nepieciešamajām funkcijām
+// public/account.js
 
 // =================== GLOBĀLIE MAINĪGIE ===================
 let currentUser = null;
@@ -114,10 +114,10 @@ function updateAuthButtons() {
         // Ielogots lietotājs
         authButtons.innerHTML = `
             <span style="margin-right: 10px; color: #e91e63; font-weight: 600;">
-                👋 Sveiks, ${currentUser.name}!
+                👋 , ${currentUser.name}!
             </span>
             <button onclick="showUserBookings()" type="button">📋 Manas rezervācijas</button>
-            <button onclick="logoutUser()" type="button">🚪 Iziet</button>
+            <button onclick="logoutUser()" type="button">🚪 Iziet</button>>
         `;
     } else {
         // Neielogots lietotājs
