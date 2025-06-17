@@ -415,7 +415,7 @@ body.modal-open::after {
     padding: 20px 0;
 }
 
-/* Pakalpojuma karte - elegants dizains */
+/* Pakalpojuma karte - elegants dizains ar LABOTU Z-INDEX */
 .service-option {
     background: var(--card-gradient);
     border-radius: 20px;
@@ -424,22 +424,24 @@ body.modal-open::after {
     box-shadow: var(--shadow-soft);
     transition: var(--transition-smooth);
     position: relative;
-    overflow: hidden;
+    overflow: visible; /* LABOJUMS: ļauj tagiem būt redzamiem */
     height: auto;
     min-height: 220px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    z-index: 1; /* LABOJUMS: pamata z-index */
 }
 
-/* Hover efekts */
+/* Hover efekts ar LABOTU Z-INDEX */
 .service-option:hover {
     transform: translateY(-8px) scale(1.02);
     box-shadow: var(--shadow-strong);
     border-color: var(--primary-rose);
+    z-index: 10; /* LABOJUMS: hover laikā augstāks z-index */
 }
 
-/* Skaists gradients hover laikā */
+/* Skaists gradients hover laikā ar LABOTU Z-INDEX */
 .service-option:hover::before {
     content: '';
     position: absolute;
@@ -449,31 +451,32 @@ body.modal-open::after {
     bottom: 0;
     background: linear-gradient(135deg, rgba(233, 30, 99, 0.05) 0%, rgba(212, 165, 116, 0.05) 100%);
     border-radius: 18px;
-    z-index: 1;
+    z-index: -1; /* LABOJUMS: aiz satura, nevis priekšā */
     animation: shimmer 0.6s ease;
+    pointer-events: none;
 }
 
-/* Pakalpojuma nosaukums */
+/* Pakalpojuma nosaukums ar AUGSTĀKU Z-INDEX */
 .service-option h4 {
     color: var(--primary-rose);
     font-size: 22px;
     font-weight: 700;
     margin-bottom: 16px;
     position: relative;
-    z-index: 2;
+    z-index: 5; /* LABOJUMS: augstāks par tagiem */
     display: flex;
     align-items: center;
     gap: 8px;
 }
 
-/* Cenas un ilguma styling */
+/* Cenas un ilguma styling ar AUGSTĀKU Z-INDEX */
 .service-option p {
     color: var(--slate);
     font-size: 16px;
     font-weight: 500;
     margin-bottom: 12px;
     position: relative;
-    z-index: 2;
+    z-index: 5; /* LABOJUMS: augstāks par tagiem */
     display: flex;
     align-items: center;
     gap: 8px;
@@ -486,14 +489,14 @@ body.modal-open::after {
     font-size: 18px;
 }
 
-/* Pogas konteiners */
+/* Pogas konteiners ar AUGSTĀKO Z-INDEX */
 .service-option .service-button-container {
     margin-top: auto;
     position: relative;
-    z-index: 2;
+    z-index: 15; /* LABOJUMS: visaugstākais z-index */
 }
 
-/* Pakalpojuma izvēles poga */
+/* Pakalpojuma izvēles poga ar AUGSTĀKO Z-INDEX */
 .service-option button {
     width: 100%;
     padding: 14px 24px;
@@ -507,20 +510,23 @@ body.modal-open::after {
     transition: var(--transition-smooth);
     position: relative;
     overflow: hidden;
-    z-index: 2;
+    z-index: 20; /* LABOJUMS: visaugstākais z-index */
     box-shadow: var(--shadow-soft);
+    pointer-events: auto; /* LABOJUMS: eksplicīti ieslēgti eventi */
 }
 
-/* Poga hover efekts */
+/* Poga hover efekts ar GARANTĒTU Z-INDEX */
 .service-option button:hover {
     background: var(--accent-gradient);
     transform: translateY(-2px) scale(1.05);
     box-shadow: var(--shadow-glow);
+    z-index: 25; /* LABOJUMS: vēl augstāks hover laikā */
 }
 
 /* Poga active efekts */
 .service-option button:active {
     transform: translateY(0) scale(0.98);
+    z-index: 25;
 }
 
 /* Skaists hover animations */
@@ -588,65 +594,71 @@ body.modal-open::after {
     grid-column: 1 / -1; /* Full width across all columns */
 }
 
-/* Premium kartīšu effects */
+/* Premium kartīšu effects ar LABOTU POZICIONĒŠANU */
 .service-option.premium {
     border: 2px solid var(--rose-gold);
     background: linear-gradient(145deg, rgba(212, 165, 116, 0.1) 0%, rgba(255,255,255,0.9) 100%);
     position: relative;
 }
 
-.service-option.premium::before {
+.service-option.premium::after { /* LABOJUMS: izmantojam ::after nevis ::before */
     content: '⭐ Premium';
     position: absolute;
-    top: 15px;
-    right: 15px;
+    top: 10px; /* LABOJUMS: tālāk no pogas */
+    right: 10px;
     background: var(--rose-gold);
     color: white;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 12px;
+    padding: 3px 8px; /* LABOJUMS: mazāks padding */
+    border-radius: 12px; /* LABOJUMS: mazāks border-radius */
+    font-size: 10px; /* LABOJUMS: mazāks font */
     font-weight: 700;
-    z-index: 3;
+    z-index: 2; /* LABOJUMS: zems z-index */
+    pointer-events: none;
+    line-height: 1;
 }
 
-/* Populārs tags */
+/* Populārs tags ar LABOTU POZICIONĒŠANU */
 .service-option.popular {
     border: 2px solid var(--success);
     position: relative;
 }
 
-.service-option.popular::before {
+.service-option.popular::after { /* LABOJUMS: izmantojam ::after nevis ::before */
     content: '🔥 Populārs';
     position: absolute;
-    top: 15px;
-    right: 15px;
+    top: 10px; /* LABOJUMS: tālāk no pogas */
+    right: 10px;
     background: var(--success);
     color: white;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 12px;
+    padding: 3px 8px; /* LABOJUMS: mazāks padding */
+    border-radius: 12px; /* LABOJUMS: mazāks border-radius */
+    font-size: 10px; /* LABOJUMS: mazāks font */
     font-weight: 700;
-    z-index: 3;
+    z-index: 2; /* LABOJUMS: zems z-index */
+    pointer-events: none;
+    line-height: 1;
 }
 
-/* Jauns pakalpojums tags */
+/* Jauns pakalpojums tags ar LABOTU POZICIONĒŠANU */
 .service-option.new {
     border: 2px solid var(--info);
     position: relative;
 }
 
-.service-option.new::before {
+.service-option.new::after { /* LABOJUMS: izmantojam ::after nevis ::before */
     content: '✨ Jauns';
     position: absolute;
-    top: 15px;
-    right: 15px;
+    top: 10px; /* LABOJUMS: tālāk no pogas */
+    right: 10px;
     background: var(--info);
     color: white;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 12px;
+    padding: 3px 8px; /* LABOJUMS: mazāks padding */
+    border-radius: 12px; /* LABOJUMS: mazāks border-radius */
+    font-size: 10px; /* LABOJUMS: mazāks font */
     font-weight: 700;
-    z-index: 3;
+    z-index: 2; /* LABOJUMS: zems z-index */
+    pointer-events: none;
+    line-height: 1;
 }
 
 /* ========================================
