@@ -4,64 +4,134 @@
 let currentUser = null;
 let userRole = 'guest';
 
-// =================== MODAL FUNKCIJAS ===================
+// =================== MODAL FUNKCIJAS (UZLABOTAS) ===================
 
-// Funkcija modālo logu atvēršanai
+// UZLABOTĀ modal atvēršana
 function openModal() {
+    console.log('🔓 Aktivizē modal overlay');
     document.body.classList.add('modal-open');
+    
+    // Papildu drošība - nodrošina ka body ir modal režīmā
+    setTimeout(() => {
+        if (!document.body.classList.contains('modal-open')) {
+            document.body.classList.add('modal-open');
+            console.warn('⚠️ Modal klase tika atkārtoti pievienota');
+        }
+    }, 10);
 }
 
-// Funkcija modālo logu aizvēršanai  
+// UZLABOTĀ modal aizvēršana
 function closeModal() {
+    console.log('🔒 Aizvēr modal overlay');
     document.body.classList.remove('modal-open');
+    
+    // Papildu notīrīšana
+    setTimeout(() => {
+        if (document.body.classList.contains('modal-open')) {
+            document.body.classList.remove('modal-open');
+            console.warn('⚠️ Modal klase tika atkārtoti noņemta');
+        }
+    }, 10);
 }
 
-// Funkcija, kas pievieno aizvēršanas pogu modal logam
+// UZLABOTĀ addCloseButtonToModal funkcija
 function addCloseButtonToModal(modalElement) {
+    if (!modalElement) return;
+    
     const modalContent = modalElement.querySelector('.auth-form-content');
-    if (!modalContent) return;
+    if (!modalContent) {
+        console.error('❌ Modal content nav atrasts!');
+        return;
+    }
     
     // Pārbauda vai aizvēršanas poga jau eksistē
-    if (modalContent.querySelector('.close-btn')) return;
+    if (modalContent.querySelector('.close-btn')) {
+        console.log('ℹ️ Close button jau eksistē');
+        return;
+    }
     
     // Izveido aizvēršanas pogu
     const closeBtn = document.createElement('button');
     closeBtn.className = 'close-btn';
     closeBtn.innerHTML = '&times;';
     closeBtn.type = 'button';
-    closeBtn.onclick = hideAuthForms;
+    closeBtn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        hideAuthForms();
+    };
     
     // Pievieno pogu modal content sākumā
     modalContent.insertBefore(closeBtn, modalContent.firstChild);
+    console.log('✅ Close button pievienots');
 }
 
-// UZLABOTĀ showLogin funkcija ar aizvēršanas pogu
+// UZLABOTĀ showLogin funkcija 
 function showLogin() {
+    console.log('🔓 Atver login modal');
     hideAllViews();
+    
     const loginForm = document.getElementById('login-form');
+    if (!loginForm) {
+        console.error('❌ Login forma nav atrasta!');
+        return;
+    }
+    
+    // Noņem hidden klasi UN parāda modal
     loginForm.classList.remove('hidden');
     
-    // Pievieno aizvēršanas pogu, ja nav
+    // Pievieno aizvēršanas pogu
     addCloseButtonToModal(loginForm);
     
+    // Aktivizē modal overlay
     openModal();
+    
+    // Debug info
+    console.log('✅ Login modal atvērts, classes:', loginForm.className);
 }
 
-// UZLABOTĀ showRegister funkcija ar aizvēršanas pogu  
+// UZLABOTĀ showRegister funkcija
 function showRegister() {
+    console.log('📝 Atver register modal');
     hideAllViews();
+    
     const registerForm = document.getElementById('register-form');
+    if (!registerForm) {
+        console.error('❌ Register forma nav atrasta!');
+        return;
+    }
+    
+    // Noņem hidden klasi UN parāda modal
     registerForm.classList.remove('hidden');
     
-    // Pievieno aizvēršanas pogu, ja nav
+    // Pievieno aizvēršanas pogu
     addCloseButtonToModal(registerForm);
     
+    // Aktivizē modal overlay
     openModal();
+    
+    // Debug info
+    console.log('✅ Register modal atvērts, classes:', registerForm.className);
 }
 
 // UZLABOTĀ hideAuthForms funkcija
 function hideAuthForms() {
-    closeModal(); // Noņemam modal-open klasi
+    console.log('❌ Slēpj auth formas');
+    
+    // Aizvēr modal overlay
+    closeModal();
+    
+    // Paslēpj visas auth formas
+    const authForms = ['login-form', 'register-form'];
+    authForms.forEach(formId => {
+        const form = document.getElementById(formId);
+        if (form) {
+            form.classList.add('hidden');
+            console.log(`✅ ${formId} paslēpts`);
+        }
+    });
+    
+    // Atgriežas uz kalendāru
     showCalendarView();
 }
 
@@ -117,7 +187,7 @@ function updateAuthButtons() {
                 👋 , ${currentUser.name}!
             </span>
             <button onclick="showUserBookings()" type="button">📋 Manas rezervācijas</button>
-            <button onclick="logoutUser()" type="button">🚪 Iziet</button>>
+            <button onclick="logoutUser()" type="button">🚪 Iziet</button>
         `;
     } else {
         // Neielogots lietotājs
@@ -230,7 +300,7 @@ function toggleEdit(bookingId) {
     const editDiv = document.getElementById(`edit-${bookingId}`);
     const editBtn = document.getElementById(`edit-btn-${bookingId}`);
     
-    if (editDiv.style.display === 'none') {
+    if (editDiv.style.display === 'none' || editDiv.style.display === '') {
         editDiv.style.display = 'block';
         editBtn.textContent = '💾 Saglabāt';
         editBtn.onclick = () => saveBookingChanges(bookingId);
@@ -464,17 +534,43 @@ function loginUser() {
         });
 }
 
-// =================== SKATU PĀRVALDĪBA ===================
+// =================== SKATU PĀRVALDĪBA (UZLABOTAS) ===================
 
+// UZLABOTĀ hideAllViews funkcija
 function hideAllViews() {
-    document.querySelectorAll('.step, .auth-form, #user-bookings').forEach(el => {
+    console.log('👁️ Slēpj visus skatus');
+    
+    // Paslēpj visus soļus
+    document.querySelectorAll('.step').forEach(el => {
         el.classList.add('hidden');
     });
+    
+    // Paslēpj auth formas
+    document.querySelectorAll('.auth-form').forEach(el => {
+        el.classList.add('hidden');
+    });
+    
+    // Paslēpj user bookings
+    const userBookings = document.getElementById('user-bookings');
+    if (userBookings) {
+        userBookings.classList.add('hidden');
+    }
+    
+    console.log('✅ Visi skati paslēpti');
 }
 
+// UZLABOTĀ showCalendarView funkcija
 function showCalendarView() {
+    console.log('📅 Parāda kalendāra skatu');
     hideAllViews();
-    document.getElementById('step-calendar').classList.remove('hidden');
+    
+    const calendarStep = document.getElementById('step-calendar');
+    if (calendarStep) {
+        calendarStep.classList.remove('hidden');
+        console.log('✅ Kalendārs parādīts');
+    } else {
+        console.error('❌ Kalendāra solis nav atrasts!');
+    }
 }
 
 function clearForm(formType) {
@@ -489,29 +585,108 @@ function clearForm(formType) {
     }
 }
 
-// =================== EVENT LISTENERS ===================
+// =================== EVENT LISTENERS (UZLABOTI) ===================
 
-// Pievienojam event listener, lai aizvērtu modal, ja noklikšķina ārpus tā
+// Uzlabotie event listeners modal aizvēršanai
 document.addEventListener('click', function(e) {
+    // Aizvēr modal, ja noklikšķina uz overlay (bet ne uz content)
     if (e.target.classList.contains('auth-form')) {
+        console.log('🖱️ Klikšķis uz modal overlay - aizvēr');
         hideAuthForms();
     }
 });
 
-// ESC taustiņš arī aizvērs modal
+// ESC taustiņš modal aizvēršanai
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         const openModal = document.querySelector('.auth-form:not(.hidden)');
         if (openModal) {
+            console.log('⌨️ ESC nospiests - aizvēr modal');
             hideAuthForms();
         }
     }
 });
 
+// =================== DEBUG FUNKCIJAS ===================
+
+// Debug funkcija modal stāvokļa pārbaudei
+function debugModalState() {
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    const bodyHasModal = document.body.classList.contains('modal-open');
+    
+    console.log('🔍 Modal Debug State:');
+    console.log('- Body modal-open:', bodyHasModal);
+    console.log('- Login form hidden:', loginForm ? loginForm.classList.contains('hidden') : 'N/A');
+    console.log('- Register form hidden:', registerForm ? registerForm.classList.contains('hidden') : 'N/A');
+    
+    return {
+        bodyModal: bodyHasModal,
+        loginHidden: loginForm ? loginForm.classList.contains('hidden') : null,
+        registerHidden: registerForm ? registerForm.classList.contains('hidden') : null
+    };
+}
+
+// Pievieno debug info uz lapas (izstrādes režīmam)
+function addDebugInfo() {
+    if (window.location.hostname === 'localhost') {
+        const debugDiv = document.createElement('div');
+        debugDiv.className = 'debug-modal-state';
+        debugDiv.style.cssText = `
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px;
+            font-size: 12px;
+            z-index: 9999;
+            border-radius: 5px;
+            display: none;
+        `;
+        document.body.appendChild(debugDiv);
+        
+        // Atjauno debug info katru sekundi
+        setInterval(() => {
+            const state = debugModalState();
+            debugDiv.innerHTML = `
+                Debug: Body Modal: ${state.bodyModal}<br>
+                Login Hidden: ${state.loginHidden}<br>
+                Register Hidden: ${state.registerHidden}
+            `;
+        }, 1000);
+        
+        // Parāda/slēpj debug ar Ctrl+D
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'd') {
+                e.preventDefault();
+                debugDiv.style.display = debugDiv.style.display === 'none' ? 'block' : 'none';
+            }
+        });
+    }
+}
+
 // =================== INICIALIZĀCIJA ===================
 
 // INICIALIZĀCIJA - pārbauda autentifikāciju lapas ielādes laikā
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔐 Inicializē account sistēmu');
+    console.log('🚀 Inicializē account sistēmu ar modal uzlabojumiem');
+    
+    // Pārbauda vai nepieciešamie elementi eksistē
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    
+    if (!loginForm) console.error('❌ Login forma nav atrasta DOM!');
+    if (!registerForm) console.error('❌ Register forma nav atrasta DOM!');
+    
+    // Pārbauda sākotnējo stāvokli
+    debugModalState();
+    
+    // Pievieno debug funkcionalitāti (tikai development)
+    addDebugInfo();
+    
+    // Pārbauda autentifikāciju
     checkAuthOnLoad();
+    
+    console.log('✅ Account sistēma ar modal uzlabojumiem inicializēta');
 });

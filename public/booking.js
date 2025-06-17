@@ -1,4 +1,4 @@
-// nails-booking/public/booking.js - PILNĪBĀ IZLABOTS ar reschedule pārbaudi
+// nails-booking/public/booking.js - GALA VERSIJA bez kļūdām
 let selectedDate = null;
 let selectedService = null;
 let selectedTime = null;
@@ -182,6 +182,7 @@ function goBackToTime() {
     nextStep('time');
 }
 
+// ATJAUNOTĀ loadServices funkcija ar uzlaboto kartīšu dizainu
 function loadServices() {
     const servicesList = document.getElementById('services-list');
     if (!servicesList) {
@@ -189,7 +190,8 @@ function loadServices() {
         return;
     }
     
-    servicesList.innerHTML = '<p>Ielādē pakalpojumus...</p>';
+    // Loading stāvoklis ar jauko dizainu
+    servicesList.innerHTML = '<p class="loading-state">🔄 Ielādē pakalpojumus...</p>';
 
     fetch('/api/bookings/get-services.php', {
         method: 'GET',
@@ -207,34 +209,98 @@ function loadServices() {
             servicesList.innerHTML = '';
             
             if (!Array.isArray(services) || services.length === 0) {
-                servicesList.innerHTML = '<p>Nav pieejamu pakalpojumu šim datumam.</p>';
+                servicesList.innerHTML = '<p class="empty-state">📭 Nav pieejamu pakalpojumu šim datumam.</p>';
                 return;
             }
             
-            services.forEach(service => {
+            // Ģenerē skaistas pakalpojumu kartes
+            services.forEach((service, index) => {
                 const serviceDiv = document.createElement('div');
                 serviceDiv.className = 'service-option';
+                
+                // Pievienojam special klases (opcional)
+                if (index === 0) serviceDiv.classList.add('popular'); // Pirmais = populārs
+                if (service.price && parseFloat(service.price) > 50) serviceDiv.classList.add('premium'); // Dārgi = premium
+                if (service.name.toLowerCase().includes('jaun')) serviceDiv.classList.add('new'); // Jauni pakalpojumi
+                
                 serviceDiv.innerHTML = `
-                    <h4>💅 ${service.name}</h4>
-                    <p>💰 Cena: ${service.price} EUR</p>
-                    <p>⏱️ Ilgums: ${service.duration} minūtes</p>
-                    <button type="button" onclick="selectService('${service.name.replace(/'/g, "\\'")}')">Izvēlēties</button>
+                    <div class="service-content">
+                        <h4>💅 ${service.name}</h4>
+                        <p>💰 Cena: ${service.price} EUR</p>
+                        <p>⏱️ Ilgums: ${service.duration} minūtes</p>
+                    </div>
+                    <div class="service-button-container">
+                        <button type="button" onclick="selectService('${service.name.replace(/'/g, "\\'")}')">
+                            ✨ Izvēlēties šo pakalpojumu
+                        </button>
+                    </div>
                 `;
                 servicesList.appendChild(serviceDiv);
             });
+            
+            // Pievienojam smooth scroll animation
+            setTimeout(() => {
+                const serviceCards = document.querySelectorAll('.service-option');
+                serviceCards.forEach((card, index) => {
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateY(20px)';
+                    card.style.transition = 'all 0.4s ease';
+                    
+                    setTimeout(() => {
+                        card.style.opacity = '1';
+                        card.style.transform = 'translateY(0)';
+                    }, index * 100); // Staggered animation
+                });
+            }, 100);
         })
         .catch(err => {
             console.error('❌ Kļūda ielādējot pakalpojumus:', err);
-            servicesList.innerHTML = '<p>❌ Neizdevās ielādēt pakalpojumus. Lūdzu, mēģiniet vēlāk.</p>';
+            servicesList.innerHTML = `
+                <div class="error-message">
+                    <h3>❌ Neizdevās ielādēt pakalpojumus</h3>
+                    <p>Kļūda: ${err.message}</p>
+                    <button onclick="loadServices()" style="margin-top: 15px; padding: 10px 20px; border-radius: 25px; border: none; background: var(--primary-rose); color: white; cursor: pointer;">
+                        🔄 Mēģināt vēlreiz
+                    </button>
+                </div>
+            `;
         });
 }
 
+// ATJAUNOTĀ selectService funkcija ar smooth feedback
 function selectService(serviceName) {
     selectedService = serviceName;
     tempBookingData.service = serviceName;
     localStorage.setItem('tempBookingData', JSON.stringify(tempBookingData));
+    
     console.log('💅 Izvēlēts pakalpojums:', serviceName);
-    nextStep('time');
+    
+    // Visual feedback - highlight selected service
+    const serviceCards = document.querySelectorAll('.service-option');
+    serviceCards.forEach(card => {
+        const h4 = card.querySelector('h4');
+        if (h4 && h4.textContent.includes(serviceName)) {
+            // Temporary success highlight
+            card.style.background = 'linear-gradient(145deg, rgba(16, 185, 129, 0.1) 0%, rgba(255,255,255,0.9) 100%)';
+            card.style.borderColor = 'var(--success)';
+            card.style.transform = 'scale(1.05)';
+            
+            const button = card.querySelector('button');
+            if (button) {
+                button.textContent = '✅ Izvēlēts!';
+                button.style.background = 'var(--success)';
+            }
+            
+            // Reset after animation
+            setTimeout(() => {
+                nextStep('time');
+            }, 800);
+        } else {
+            // Fade out non-selected
+            card.style.opacity = '0.5';
+            card.style.transform = 'scale(0.95)';
+        }
+    });
 }
 
 function loadAvailableTimes(date, service) {
@@ -249,7 +315,7 @@ function loadAvailableTimes(date, service) {
         return;
     }
     
-    timeSlotsEl.innerHTML = '<p>Ielādē pieejamos laikus...</p>';
+    timeSlotsEl.innerHTML = '<p class="loading-state">⏰ Ielādē pieejamos laikus...</p>';
     
     console.log('🔍 Ielādē laikus datumam:', date);
     console.log('🔍 Pakalpojums:', service);
@@ -284,13 +350,11 @@ function loadAvailableTimes(date, service) {
             if (!timeSlots || !Array.isArray(timeSlots) || timeSlots.length === 0) {
                 console.warn('⚠️ Nav pieejamu laiku');
                 timeSlotsEl.innerHTML = `
-                    <div style="text-align: center; padding: 20px;">
-                        <p>❌ Nav pieejamu laiku šim datumam.</p>
-                        <p style="font-size: 14px; color: #6c757d;">
-                            Datums: ${date}<br>
-                            Pakalpojums: ${service || 'Nav izvēlēts'}<br>
-                            Mēģini izvēlēties citu datumu vai pakalpojumu.
-                        </p>
+                    <div class="empty-state" style="grid-column: 1 / -1;">
+                        <h3>❌ Nav pieejamu laiku šim datumam</h3>
+                        <p>Datums: ${date}<br>
+                        Pakalpojums: ${service || 'Nav izvēlēts'}<br>
+                        Mēģini izvēlēties citu datumu vai pakalpojumu.</p>
                     </div>
                 `;
                 return;
@@ -311,20 +375,29 @@ function loadAvailableTimes(date, service) {
                 btn.className = 'time-slot';
                 btn.type = 'button';
                 btn.onclick = () => selectTime(timeText);
+                
+                // Staggered animation for time slots
+                btn.style.opacity = '0';
+                btn.style.transform = 'translateY(10px)';
+                btn.style.transition = 'all 0.3s ease';
+                
+                setTimeout(() => {
+                    btn.style.opacity = '1';
+                    btn.style.transform = 'translateY(0)';
+                }, index * 50);
+                
                 timeSlotsEl.appendChild(btn);
             });
         })
         .catch(err => {
             console.error('❌ Kļūda ielādējot laikus:', err);
             timeSlotsEl.innerHTML = `
-                <div style="text-align: center; padding: 20px;">
-                    <p>❌ Neizdevās ielādēt pieejamos laikus.</p>
-                    <p style="font-size: 14px; color: #6c757d;">
-                        Kļūda: ${err.message}<br>
-                        Datums: ${date}<br>
-                        Pakalpojums: ${service || 'Nav izvēlēts'}
-                    </p>
-                    <button onclick="loadAvailableTimes('${date}', '${service || ''}')" style="margin-top: 10px;">
+                <div class="error-message" style="grid-column: 1 / -1;">
+                    <h3>❌ Neizdevās ielādēt pieejamos laikus</h3>
+                    <p>Kļūda: ${err.message}<br>
+                    Datums: ${date}<br>
+                    Pakalpojums: ${service || 'Nav izvēlēts'}</p>
+                    <button onclick="loadAvailableTimes('${date}', '${service || ''}')" style="margin-top: 15px; padding: 10px 20px; border-radius: 25px; border: none; background: var(--primary-rose); color: white; cursor: pointer;">
                         🔄 Mēģināt vēlreiz
                     </button>
                 </div>
@@ -338,6 +411,21 @@ function selectTime(time) {
     localStorage.setItem('tempBookingData', JSON.stringify(tempBookingData));
     
     console.log('🕐 Izvēlēts laiks:', time);
+    
+    // Visual feedback for time selection
+    const timeSlots = document.querySelectorAll('.time-slot');
+    timeSlots.forEach(slot => {
+        if (slot.textContent === time) {
+            slot.classList.add('selected');
+            slot.style.background = 'var(--success)';
+            slot.style.color = 'white';
+            slot.style.borderColor = 'var(--success)';
+            slot.textContent = '✅ ' + time;
+        } else {
+            slot.style.opacity = '0.5';
+            slot.style.transform = 'scale(0.95)';
+        }
+    });
     
     if (isRescheduling) {
         // Pārbauda vai joprojām ir ielogots
@@ -353,10 +441,14 @@ function selectTime(time) {
         }
         
         // Apstiprina pārcelšanu
-        confirmReschedule();
+        setTimeout(() => {
+            confirmReschedule();
+        }, 1000);
     } else {
         // Parasta rezervācija
-        nextStep('confirm');
+        setTimeout(() => {
+            nextStep('confirm');
+        }, 1000);
     }
 }
 
@@ -627,9 +719,53 @@ function backToCalendar() {
     resetBooking();
 }
 
+// BONUS: Funkcija smooth scroll uz pakalpojumiem (ja nepieciešams)
+function scrollToServices() {
+    const servicesSection = document.getElementById('step-service');
+    if (servicesSection) {
+        servicesSection.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start' 
+        });
+    }
+}
+
+// BONUS: Pakalpojumu filtrēšana pēc cenas (ja nepieciešama)
+function filterServicesByPrice(maxPrice = null) {
+    const serviceCards = document.querySelectorAll('.service-option');
+    
+    serviceCards.forEach(card => {
+        const priceText = card.querySelector('p:first-of-type')?.textContent;
+        const price = priceText ? parseFloat(priceText.match(/[\d.]+/)?.[0]) : 0;
+        
+        if (maxPrice && price > maxPrice) {
+            card.style.display = 'none';
+        } else {
+            card.style.display = 'flex';
+        }
+    });
+}
+
+// BONUS: Pakalpojumu meklēšana (ja nepieciešama)
+function searchServices(searchTerm) {
+    const serviceCards = document.querySelectorAll('.service-option');
+    const term = searchTerm.toLowerCase();
+    
+    serviceCards.forEach(card => {
+        const serviceName = card.querySelector('h4')?.textContent.toLowerCase();
+        
+        if (serviceName && serviceName.includes(term)) {
+            card.style.display = 'flex';
+            card.style.opacity = '1';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
 // Inicializācija
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🚀 Inicializē booking sistēmu');
+    console.log('🚀 Inicializē booking sistēmu ar uzlabotajām kartēm');
     
     // SVARĪGI: Notīra nederīgo reschedule stāvokli
     if (checkAndClearInvalidReschedule()) {

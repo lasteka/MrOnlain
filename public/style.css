@@ -1,3 +1,59 @@
+/* MrOnlain - Uzlabotais elegantais dizains ar FIKSĒTIEM MODALIEM */
+/* Saglabā rozā tēmu, bet padara to sofistikētāku un profesionālāku */
+
+/* ========================================
+   CSS MAINĪGIE - ELEGANTA ROZĀ PALLETE
+======================================== */
+:root {
+    /* Galvenās krāsas - sofistikētas rozā */
+    --primary-rose: #e91e63;
+    --primary-deep: #ad1457;
+    --primary-light: #f8bbd9;
+    --primary-soft: #fce4ec;
+    
+    /* Rose Gold akcenti */
+    --rose-gold: #d4a574;
+    --champagne: #f7f3e9;
+    --pearl: #f8f6f0;
+    
+    /* Neitrālās krāsas */
+    --charcoal: #2c3e50;
+    --slate: #475569;
+    --silver: #94a3b8;
+    --cloud: #f1f5f9;
+    --snow: #fefefe;
+    
+    /* Statusa krāsas */
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --info: #3b82f6;
+    
+    /* Gradienti */
+    --hero-gradient: linear-gradient(135deg, #fef7f7 0%, #f8f4ff 50%, #fef7f7 100%);
+    --card-gradient: linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(252,228,236,0.4) 100%);
+    --button-gradient: linear-gradient(135deg, #e91e63 0%, #ad1457 100%);
+    --accent-gradient: linear-gradient(135deg, #d4a574 0%, #e91e63 100%);
+    
+    /* Ēnas */
+    --shadow-soft: 0 4px 20px rgba(233, 30, 99, 0.08);
+    --shadow-medium: 0 8px 30px rgba(233, 30, 99, 0.12);
+    --shadow-strong: 0 20px 60px rgba(233, 30, 99, 0.15);
+    --shadow-glow: 0 0 30px rgba(233, 30, 99, 0.2);
+    
+    /* Robežas */
+    --border-light: rgba(233, 30, 99, 0.1);
+    --border-medium: rgba(233, 30, 99, 0.2);
+    --border-strong: rgba(233, 30, 99, 0.3);
+    
+    /* Animācijas */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* ========================================
+   PAMATA ELEMENTI
+======================================== */
 * {
     margin: 0;
     padding: 0;
@@ -5,33 +61,49 @@
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
-    min-height: 100vh;
-    padding: 20px;
-    color: #333;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--hero-gradient);
+    background-attachment: fixed;
+    color: var(--charcoal);
+    line-height: 1.7;
+    font-weight: 400;
+    overflow-x: hidden;
 }
 
+/* Sofistikēts fona pattern */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+        radial-gradient(circle at 20% 20%, rgba(233, 30, 99, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(212, 165, 116, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 40% 70%, rgba(233, 30, 99, 0.02) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* ========================================
+   CONTAINER
+======================================== */
 .container {
     max-width: 1200px;
-    width: 90%;
-    margin: 20px auto;
-    background: white;
-    border-radius: 20px;
-    box-shadow: 0 25px 50px rgba(0,0,0,0.15);
-    overflow: hidden;
+    margin: 0 auto;
+    padding: 20px;
+    min-height: 100vh;
     position: relative;
-    transition: all 0.3s ease;
 }
 
-body.modal-open .container {
-    opacity: 0.95;
-}
-
+/* ========================================
+   AUTH POGAS (AUGŠĒJĀ LABAJĀ STŪRĪ)
+======================================== */
 .auth-buttons {
-    position: absolute;
-    top: 25px;
-    right: 25px;
+    position: fixed;
+    top: 20px;
+    right: 20px;
     display: flex;
     gap: 12px;
     z-index: 100;
@@ -39,247 +111,158 @@ body.modal-open .container {
 }
 
 .auth-buttons button {
-    padding: 10px 18px;
-    border: 2px solid #e91e63;
-    background: white;
-    color: #e91e63;
-    border-radius: 25px;
-    cursor: pointer;
+    padding: 12px 20px;
+    border: 2px solid var(--primary-rose);
+    border-radius: 50px;
+    background: rgba(255, 255, 255, 0.95);
+    color: var(--primary-rose);
     font-weight: 600;
-    transition: all 0.3s ease;
     font-size: 14px;
-    white-space: nowrap;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    backdrop-filter: blur(10px);
+    box-shadow: var(--shadow-soft);
 }
 
 .auth-buttons button:hover {
-    background: #e91e63;
+    background: var(--primary-rose);
     color: white;
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(233, 30, 99, 0.3);
+    box-shadow: var(--shadow-medium);
 }
 
-.step, .auth-form, #user-bookings {
-    display: none;
-    padding: 60px 40px 40px 40px;
+.auth-buttons span {
+    display: inline-block;
+    margin-right: 10px;
+    color: var(--primary-rose);
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 12px 16px;
+    border-radius: 50px;
+    backdrop-filter: blur(10px);
+    box-shadow: var(--shadow-soft);
 }
 
-.step:not(.hidden), .auth-form:not(.hidden), #user-bookings:not(.hidden) {
-    display: block;
+/* ========================================
+   MODAL SISTĒMAS LABOJUMI - KRITISKAIS BLOKS
+======================================== */
+
+/* SVARĪGI: Modal overlay body klasei */
+body.modal-open {
+    overflow: hidden !important;
+    position: relative;
 }
 
-.step h2 {
-    text-align: center;
-    color: #2c3e50;
-    margin-bottom: 40px;
-    font-size: 32px;
-    font-weight: 700;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+body.modal-open::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(44, 62, 80, 0.6);
+    backdrop-filter: blur(8px);
+    z-index: 1990;
+    animation: fadeIn 0.3s ease;
 }
 
-#calendar {
-    max-width: 900px;
-    margin: 20px auto;
-    background: #fff;
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-    padding: 30px;
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 8px;
+/* ========================================
+   MODĀLIE LOGI - KRITISKAIS BLOKS
+======================================== */
+.auth-form {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 2000 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: all 0.3s ease;
 }
 
-#calendar h3 {
-    grid-column: span 7;
-    text-align: center;
-    font-size: 24px;
-    color: #2c3e50;
-    margin-bottom: 20px;
-    font-weight: 700;
+/* KRITISKAIS LABOJUMS: Kad modal nav slēpts */
+.auth-form:not(.hidden) {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: all !important;
+    animation: fadeIn 0.4s ease !important;
 }
 
-.calendar-nav {
-    grid-column: span 7;
-    text-align: center;
-    margin-bottom: 25px;
+/* KRITISKAIS LABOJUMS: Kad modal ir slēpts */
+.auth-form.hidden {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    display: flex !important; /* Saglabā layout, bet paslēpj ar opacity */
 }
 
-.calendar-nav button {
-    background: linear-gradient(45deg, #e91e63, #ff6b6b);
-    color: white;
+.auth-form-content {
+    background: var(--card-gradient);
+    backdrop-filter: blur(30px);
+    border: 1px solid var(--border-medium);
+    border-radius: 24px;
+    padding: 40px;
+    max-width: 450px;
+    width: 90%;
+    box-shadow: var(--shadow-strong);
+    animation: modalSlideIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    position: relative;
+    z-index: 2001;
+    transform: scale(0.8);
+    transition: transform 0.3s ease;
+}
+
+.auth-form:not(.hidden) .auth-form-content {
+    transform: scale(1);
+}
+
+/* Aizvēršanas poga */
+.auth-form .close-btn {
+    position: absolute;
+    top: 20px;
+    right: 24px;
+    background: none;
     border: none;
-    padding: 12px 20px;
-    margin: 0 10px;
-    border-radius: 25px;
+    font-size: 24px;
+    color: var(--silver);
     cursor: pointer;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    font-size: 16px;
-}
-
-.calendar-nav button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(233, 30, 99, 0.4);
-}
-
-.calendar-day {
-    aspect-ratio: 1;
-    padding: 15px 10px;
-    cursor: pointer;
-    border: 2px solid #e9ecef;
-    background: linear-gradient(135deg, #fff, #f8f9fa);
-    text-align: center;
-    border-radius: 12px;
-    font-weight: 600;
-    font-size: 16px;
-    color: #495057;
-    transition: all 0.3s ease;
+    transition: var(--transition-smooth);
+    padding: 8px;
+    border-radius: 50%;
+    z-index: 2002;
+    width: 40px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-.calendar-day:hover:not(:disabled) {
-    background: linear-gradient(135deg, #e91e63, #ff6b6b);
-    color: white;
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(233, 30, 99, 0.3);
-    border-color: #e91e63;
+.auth-form .close-btn:hover {
+    color: var(--primary-rose);
+    background: rgba(233, 30, 99, 0.1);
+    transform: scale(1.1);
 }
 
-.calendar-day:disabled,
-.calendar-day.past-date {
-    background: #e9ecef;
-    color: #adb5bd;
-    cursor: not-allowed;
-    opacity: 0.5;
-}
-
-.calendar-empty {
-    background: transparent;
-    border: none;
-}
-
-#services-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
-    margin: 30px 0;
-}
-
-.service-option {
-    border: 3px solid #e9ecef;
-    padding: 25px;
-    border-radius: 15px;
-    background: linear-gradient(135deg, #f8f9fa, #ffffff);
-    transition: all 0.3s ease;
-    cursor: pointer;
+.auth-form h2 {
     text-align: center;
-}
-
-.service-option:hover {
-    border-color: #e91e63;
-    transform: translateY(-5px);
-    box-shadow: 0 15px 35px rgba(233, 30, 99, 0.2);
-}
-
-.service-option h4 {
-    margin: 0 0 15px 0;
-    color: #2c3e50;
-    font-size: 20px;
-    font-weight: 700;
-}
-
-.service-option p {
-    margin: 8px 0;
-    color: #6c757d;
-    font-size: 16px;
-    font-weight: 500;
-}
-
-.service-option button {
-    background: linear-gradient(45deg, #28a745, #20c997);
-    color: white;
-    border: none;
-    padding: 12px 25px;
-    border-radius: 25px;
-    cursor: pointer;
-    font-weight: 600;
-    margin-top: 15px;
-    transition: all 0.3s ease;
-    font-size: 16px;
-}
-
-.service-option button:hover {
-    background: linear-gradient(45deg, #20c997, #17a2b8);
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(32, 201, 151, 0.4);
-}
-
-#time-slots {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 15px;
-    margin: 30px 0;
-    max-width: 800px;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-.time-slot {
-    padding: 15px 20px;
-    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-    border: 3px solid #dee2e6;
-    border-radius: 15px;
-    cursor: pointer;
-    font-weight: 700;
-    text-align: center;
-    transition: all 0.3s ease;
-    font-size: 16px;
-    color: #495057;
-}
-
-.time-slot:hover {
-    background: linear-gradient(135deg, #17a2b8, #20c997);
-    color: white;
-    border-color: #17a2b8;
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(23, 162, 184, 0.3);
-}
-
-.booking-summary {
-    background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
-    padding: 25px;
-    border-radius: 15px;
+    color: var(--charcoal);
     margin-bottom: 30px;
-    border-left: 5px solid #e91e63;
+    font-size: 28px;
+    font-weight: 700;
+    background: var(--button-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
-.booking-summary h3 {
-    color: #2c3e50;
-    margin-bottom: 15px;
-    font-size: 20px;
-}
-
-.booking-summary p {
-    margin: 8px 0;
-    font-size: 16px;
-    color: #495057;
-    font-weight: 500;
-}
-
-.booking-form {
-    background: #f8f9fa;
-    padding: 25px;
-    border-radius: 15px;
-    margin: 20px 0;
-}
-
-.booking-form h3 {
-    color: #2c3e50;
-    margin-bottom: 20px;
-    font-size: 18px;
-}
-
+/* ========================================
+   FORMU ELEMENTI
+======================================== */
 .form-group {
     margin-bottom: 20px;
 }
@@ -288,386 +271,817 @@ body.modal-open .container {
     display: block;
     margin-bottom: 8px;
     font-weight: 600;
-    color: #495057;
+    color: var(--charcoal);
     font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .form-group input,
 .form-group textarea {
     width: 100%;
-    padding: 12px 15px;
-    border: 2px solid #dee2e6;
-    border-radius: 8px;
-    font-size: 16px;
-    transition: border-color 0.3s ease;
+    padding: 16px 20px;
+    border: 2px solid var(--border-light);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.9);
+    font-size: 15px;
     font-family: inherit;
+    transition: var(--transition-smooth);
+    color: var(--charcoal);
 }
 
 .form-group input:focus,
 .form-group textarea:focus {
     outline: none;
-    border-color: #e91e63;
-    box-shadow: 0 0 0 3px rgba(233, 30, 99, 0.1);
-}
-
-.primary-btn {
-    background: linear-gradient(45deg, #e91e63, #ff6b6b);
-    color: white;
-    border: none;
-    padding: 15px 30px;
-    border-radius: 25px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: 700;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(233, 30, 99, 0.3);
-}
-
-.primary-btn:hover {
-    background: linear-gradient(45deg, #c2185b, #e91e63);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(233, 30, 99, 0.4);
-}
-
-.confirm-buttons {
-    display: flex;
-    gap: 15px;
-    flex-wrap: wrap;
-    justify-content: center;
-    margin-top: 30px;
-}
-
-.confirm-buttons button:not(.primary-btn) {
+    border-color: var(--primary-rose);
     background: white;
-    color: #6c757d;
-    border: 2px solid #dee2e6;
-    padding: 12px 20px;
-    border-radius: 20px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.3s ease;
-}
-
-.confirm-buttons button:not(.primary-btn):hover {
-    border-color: #adb5bd;
-    color: #495057;
-    transform: translateY(-1px);
-}
-
-.step-navigation {
-    text-align: center;
-    margin-top: 30px;
-}
-
-.step-navigation button {
-    background: white;
-    color: #6c757d;
-    border: 2px solid #dee2e6;
-    padding: 12px 25px;
-    border-radius: 20px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.3s ease;
-}
-
-.step-navigation button:hover {
-    border-color: #e91e63;
-    color: #e91e63;
+    box-shadow: 0 0 0 4px rgba(233, 30, 99, 0.1);
     transform: translateY(-2px);
 }
 
-.auth-form {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.4);
-    z-index: 2000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    animation: fadeIn 0.3s ease;
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+    color: var(--silver);
+    opacity: 0.8;
 }
 
-.auth-form-content {
-    background: white;
-    border: 2px solid rgba(233, 30, 99, 0.2);
-    border-radius: 20px;
-    padding: 40px;
-    max-width: 450px;
-    width: 90%;
-    box-shadow: 0 25px 50px rgba(0,0,0,0.3);
-    animation: modalSlideIn 0.4s ease;
-    position: relative;
-    z-index: 2001;
-}
-
-.auth-form .close-btn {
-    position: absolute;
-    top: 15px;
-    right: 20px;
-    background: none;
-    border: none;
-    font-size: 24px;
-    color: #adb5bd;
-    cursor: pointer;
-    transition: color 0.3s ease;
-    padding: 5px;
-    line-height: 1;
-}
-
-.auth-form .close-btn:hover {
-    color: #e91e63;
-}
-
-.auth-form h2 {
-    text-align: center;
-    color: #2c3e50;
-    margin-bottom: 30px;
-    font-size: 24px;
-    font-weight: 700;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-.auth-form .form-group input {
-    background: white;
-    border: 2px solid #e9ecef;
-    border-radius: 12px;
-    padding: 15px;
-    font-size: 16px;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.auth-form .form-group input:focus {
-    background: white;
-    border-color: #e91e63;
-    box-shadow: 0 0 0 3px rgba(233, 30, 99, 0.1);
-    outline: none;
-}
-
+/* Form pogas */
 .form-buttons {
     display: flex;
-    gap: 15px;
-    margin-top: 25px;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+}
+
+.form-buttons button {
+    flex: 1;
+    min-width: 120px;
+    padding: 14px 24px;
+    border-radius: 50px;
+    font-weight: 600;
+    transition: var(--transition-smooth);
+    cursor: pointer;
+    border: 2px solid transparent;
+    font-size: 14px;
 }
 
 .form-buttons .primary-btn {
-    background: linear-gradient(45deg, #e91e63, #ff6b6b);
+    background: var(--button-gradient);
     color: white;
-    border: none;
-    padding: 15px 30px;
-    border-radius: 25px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: 700;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(233, 30, 99, 0.3);
-    flex: 1;
+    border-color: transparent;
 }
 
 .form-buttons .primary-btn:hover {
-    background: linear-gradient(45deg, #c2185b, #e91e63);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(233, 30, 99, 0.4);
+    background: var(--accent-gradient);
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: var(--shadow-glow);
 }
 
 .form-buttons button:not(.primary-btn) {
-    flex: 1;
-    background: white;
-    color: #6c757d;
-    border: 2px solid #dee2e6;
-    padding: 12px;
-    border-radius: 20px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--slate);
+    border-color: var(--border-medium);
 }
 
 .form-buttons button:not(.primary-btn):hover {
-    border-color: #adb5bd;
-    color: #495057;
-    transform: translateY(-1px);
+    border-color: var(--primary-rose);
+    color: var(--primary-rose);
+    transform: translateY(-2px);
+    background: white;
+    box-shadow: var(--shadow-soft);
+}
+
+/* ========================================
+   SOĻU SISTĒMA - LABOTA
+======================================== */
+
+/* KRITISKAIS LABOJUMS: Step visibility */
+.step {
+    display: none !important;
+    padding: 60px 40px 40px 40px;
+    min-height: 500px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.4s ease;
+}
+
+/* Kad step ir redzams */
+.step:not(.hidden) {
+    display: block !important;
+    opacity: 1;
+    transform: translateY(0);
+    animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Kad step ir slēpts */
+.step.hidden {
+    display: none !important;
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+.step h2 {
+    text-align: center;
+    color: var(--charcoal);
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 40px;
+    position: relative;
+}
+
+.step h2::after {
+    content: '';
+    position: absolute;
+    bottom: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 3px;
+    background: var(--accent-gradient);
+    border-radius: 2px;
+}
+
+/* ========================================
+   PAKALPOJUMU KARŠU LAYOUT - UZLABOTS
+======================================== */
+
+/* Pakalpojumu konteiners - responsive grid */
+#services-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px 0;
+}
+
+/* Pakalpojuma karte - elegants dizains */
+.service-option {
+    background: var(--card-gradient);
+    border-radius: 20px;
+    padding: 30px;
+    border: 2px solid var(--border-light);
+    box-shadow: var(--shadow-soft);
+    transition: var(--transition-smooth);
+    position: relative;
+    overflow: hidden;
+    height: auto;
+    min-height: 220px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* Hover efekts */
+.service-option:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: var(--shadow-strong);
+    border-color: var(--primary-rose);
+}
+
+/* Skaists gradients hover laikā */
+.service-option:hover::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(233, 30, 99, 0.05) 0%, rgba(212, 165, 116, 0.05) 100%);
+    border-radius: 18px;
+    z-index: 1;
+    animation: shimmer 0.6s ease;
+}
+
+/* Pakalpojuma nosaukums */
+.service-option h4 {
+    color: var(--primary-rose);
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Cenas un ilguma styling */
+.service-option p {
+    color: var(--slate);
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 12px;
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Cenas special styling */
+.service-option p:first-of-type {
+    color: var(--success);
+    font-weight: 700;
+    font-size: 18px;
+}
+
+/* Pogas konteiners */
+.service-option .service-button-container {
+    margin-top: auto;
+    position: relative;
+    z-index: 2;
+}
+
+/* Pakalpojuma izvēles poga */
+.service-option button {
+    width: 100%;
+    padding: 14px 24px;
+    background: var(--button-gradient);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    position: relative;
+    overflow: hidden;
+    z-index: 2;
+    box-shadow: var(--shadow-soft);
+}
+
+/* Poga hover efekts */
+.service-option button:hover {
+    background: var(--accent-gradient);
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: var(--shadow-glow);
+}
+
+/* Poga active efekts */
+.service-option button:active {
+    transform: translateY(0) scale(0.98);
+}
+
+/* Skaists hover animations */
+@keyframes shimmer {
+    0% { opacity: 0; }
+    50% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+/* Services step header uzlabojums */
+#step-service h2 {
+    text-align: center;
+    color: var(--charcoal);
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 35px;
+    position: relative;
+}
+
+#step-service h2::after {
+    content: '';
+    position: absolute;
+    bottom: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 3px;
+    background: var(--accent-gradient);
+    border-radius: 2px;
+}
+
+/* Loading state styling */
+#services-list .loading-state {
+    text-align: center;
+    color: var(--silver);
+    font-style: italic;
+    padding: 40px;
+    background: var(--card-gradient);
+    border-radius: 16px;
+    border: 2px dashed var(--border-light);
+    grid-column: 1 / -1; /* Full width across all columns */
+}
+
+/* Error state styling */
+#services-list .error-message {
+    text-align: center;
+    color: var(--danger);
+    background: rgba(239, 68, 68, 0.1);
+    border: 2px solid var(--danger);
+    border-radius: 16px;
+    padding: 30px;
+    font-weight: 600;
+    grid-column: 1 / -1; /* Full width across all columns */
+}
+
+/* Empty state styling */
+#services-list .empty-state {
+    text-align: center;
+    color: var(--slate);
+    background: var(--cloud);
+    border: 2px dashed var(--silver);
+    border-radius: 16px;
+    padding: 40px;
+    font-style: italic;
+    grid-column: 1 / -1; /* Full width across all columns */
+}
+
+/* Premium kartīšu effects */
+.service-option.premium {
+    border: 2px solid var(--rose-gold);
+    background: linear-gradient(145deg, rgba(212, 165, 116, 0.1) 0%, rgba(255,255,255,0.9) 100%);
+    position: relative;
+}
+
+.service-option.premium::before {
+    content: '⭐ Premium';
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: var(--rose-gold);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    z-index: 3;
+}
+
+/* Populārs tags */
+.service-option.popular {
+    border: 2px solid var(--success);
+    position: relative;
+}
+
+.service-option.popular::before {
+    content: '🔥 Populārs';
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: var(--success);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    z-index: 3;
+}
+
+/* Jauns pakalpojums tags */
+.service-option.new {
+    border: 2px solid var(--info);
+    position: relative;
+}
+
+.service-option.new::before {
+    content: '✨ Jauns';
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: var(--info);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    z-index: 3;
+}
+
+/* ========================================
+   LAIKA SLOTI
+======================================== */
+#time-slots {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 16px;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px 0;
+}
+
+.time-slot {
+    padding: 16px 20px;
+    border: 2px solid var(--border-light);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--charcoal);
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    text-align: center;
+    font-size: 16px;
+}
+
+.time-slot:hover {
+    background: var(--primary-light);
+    border-color: var(--primary-rose);
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: var(--shadow-soft);
+    color: var(--primary-deep);
+}
+
+.time-slot:active {
+    transform: translateY(0) scale(0.98);
+}
+
+/* ========================================
+   KALENDĀRS
+======================================== */
+#calendar {
+    max-width: 600px;
+    margin: 0 auto;
+    background: var(--card-gradient);
+    border-radius: 24px;
+    padding: 30px;
+    box-shadow: var(--shadow-medium);
+    border: 1px solid var(--border-light);
+}
+
+.calendar-nav {
+    margin-bottom: 20px;
+}
+
+.calendar-nav button {
+    padding: 12px 24px;
+    margin: 0 8px;
+    border: 2px solid var(--primary-rose);
+    border-radius: 50px;
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--primary-rose);
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+
+.calendar-nav button:hover {
+    background: var(--primary-rose);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-soft);
+}
+
+.calendar-day {
+    aspect-ratio: 1;
+    border: 2px solid var(--border-light);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--charcoal);
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+
+.calendar-day:hover:not(.past-date):not(:disabled) {
+    background: var(--primary-light);
+    border-color: var(--primary-rose);
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: var(--shadow-soft);
+    color: var(--primary-deep);
+}
+
+.calendar-day.past-date {
+    background: var(--cloud);
+    color: var(--silver);
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.calendar-empty {
+    aspect-ratio: 1;
+}
+
+/* ========================================
+   LIETOTĀJA REZERVĀCIJAS SKATS - LABOTS
+======================================== */
+#user-bookings {
+    display: none !important;
+    padding: 60px 40px 40px 40px;
+    min-height: 500px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.4s ease;
+}
+
+#user-bookings:not(.hidden) {
+    display: block !important;
+    opacity: 1;
+    transform: translateY(0);
+    animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#user-bookings.hidden {
+    display: none !important;
+    opacity: 0;
+    transform: translateY(20px);
 }
 
 .user-bookings-header {
     text-align: center;
-    margin-bottom: 30px;
+    margin-bottom: 40px;
 }
 
 .user-bookings-header h2 {
-    color: #2c3e50;
-    margin-bottom: 10px;
+    color: var(--charcoal);
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 15px;
+    position: relative;
+}
+
+.user-bookings-header h2::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 3px;
+    background: var(--accent-gradient);
+    border-radius: 2px;
 }
 
 .user-greeting {
     font-size: 18px;
-    color: #6c757d;
+    color: var(--slate);
     font-weight: 500;
-}
-
-.no-bookings {
-    text-align: center;
-    padding: 60px 20px;
-    background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
-    border-radius: 20px;
-    margin: 30px 0;
-}
-
-.no-bookings h3 {
-    color: #2c3e50;
-    margin-bottom: 15px;
-    font-size: 24px;
-}
-
-.no-bookings p {
-    color: #6c757d;
-    font-size: 16px;
-}
-
-.booking {
-    border: 3px solid #e9ecef;
-    padding: 25px;
-    margin: 20px 0;
-    border-radius: 15px;
-    background: linear-gradient(135deg, #f8f9fa, #ffffff);
-    transition: all 0.3s ease;
-}
-
-.booking:hover {
-    border-color: #e91e63;
-    box-shadow: 0 10px 30px rgba(233, 30, 99, 0.1);
-}
-
-.booking h4 {
-    color: #2c3e50;
-    margin-bottom: 15px;
-    font-size: 18px;
-}
-
-.booking-info p {
-    margin: 8px 0;
-    font-size: 16px;
-    color: #495057;
-}
-
-.booking-edit {
-    margin: 20px 0;
-}
-
-.booking-edit textarea {
-    width: 100%;
-    padding: 12px;
-    border: 2px solid #dee2e6;
-    border-radius: 8px;
-    resize: vertical;
-    font-family: inherit;
-    margin-bottom: 15px;
-}
-
-.file-label {
-    display: block;
-    margin: 10px 0 5px 0;
-    font-weight: 600;
-    color: #495057;
-}
-
-.booking-buttons {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-top: 15px;
-}
-
-.update-btn {
-    background: linear-gradient(45deg, #28a745, #20c997);
-    color: white;
-    border: none;
-    padding: 10px 16px;
-    border-radius: 20px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    font-size: 14px;
-}
-
-.update-btn:hover {
-    background: linear-gradient(45deg, #20c997, #17a2b8);
-    transform: translateY(-1px);
-}
-
-.reschedule-btn {
-    background: linear-gradient(45deg, #ffc107, #ff9800);
-    color: #212529;
-    border: none;
-    padding: 10px 16px;
-    border-radius: 20px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    font-size: 14px;
-}
-
-.reschedule-btn:hover {
-    background: linear-gradient(45deg, #ff9800, #f57c00);
-    transform: translateY(-1px);
-}
-
-.cancel-btn {
-    background: linear-gradient(45deg, #dc3545, #c82333);
-    color: white;
-    border: none;
-    padding: 10px 16px;
-    border-radius: 20px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    font-size: 14px;
-}
-
-.cancel-btn:hover {
-    background: linear-gradient(45deg, #c82333, #bd2130);
-    transform: translateY(-1px);
 }
 
 .user-bookings-footer {
     text-align: center;
     margin-top: 40px;
-    padding-top: 30px;
-    border-top: 2px solid #e9ecef;
 }
 
+/* ========================================
+   REZERVĀCIJU KARŠU DIZAINS
+======================================== */
+.booking {
+    background: var(--card-gradient);
+    border-radius: 20px;
+    padding: 25px;
+    margin-bottom: 20px;
+    border: 1px solid var(--border-light);
+    box-shadow: var(--shadow-soft);
+    transition: var(--transition-smooth);
+}
+
+.booking:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-medium);
+    border-color: var(--border-medium);
+}
+
+.booking h4 {
+    color: var(--primary-rose);
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 15px;
+}
+
+.booking-info p {
+    margin-bottom: 8px;
+    color: var(--slate);
+    font-size: 15px;
+}
+
+.booking-info strong {
+    color: var(--charcoal);
+    font-weight: 600;
+}
+
+.booking-buttons {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.booking-buttons button {
+    padding: 10px 16px;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    border: 2px solid transparent;
+}
+
+.update-btn {
+    background: var(--info);
+    color: white;
+}
+
+.update-btn:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+}
+
+.reschedule-btn {
+    background: var(--warning);
+    color: white;
+}
+
+.reschedule-btn:hover {
+    background: #d97706;
+    transform: translateY(-1px);
+}
+
+.cancel-btn {
+    background: var(--danger);
+    color: white;
+}
+
+.cancel-btn:hover {
+    background: #dc2626;
+    transform: translateY(-1px);
+}
+
+/* ========================================
+   APSTIPRINĀJUMA FORMA
+======================================== */
+.booking-form {
+    background: var(--card-gradient);
+    border-radius: 20px;
+    padding: 30px;
+    margin: 20px 0;
+    border: 1px solid var(--border-light);
+    box-shadow: var(--shadow-soft);
+}
+
+.booking-form h3 {
+    color: var(--charcoal);
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.booking-summary {
+    background: var(--champagne);
+    border-radius: 16px;
+    padding: 25px;
+    margin-bottom: 25px;
+    border: 2px solid var(--border-light);
+}
+
+.booking-summary h3 {
+    color: var(--primary-rose);
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.booking-summary p {
+    color: var(--charcoal);
+    font-size: 16px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.booking-summary strong {
+    font-weight: 700;
+}
+
+.confirm-buttons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 25px;
+    justify-content: center;
+}
+
+.confirm-buttons button {
+    padding: 14px 24px;
+    border-radius: 50px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    border: 2px solid transparent;
+    font-size: 14px;
+    min-width: 140px;
+}
+
+.confirm-buttons .primary-btn {
+    background: var(--button-gradient);
+    color: white;
+}
+
+.confirm-buttons .primary-btn:hover {
+    background: var(--accent-gradient);
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: var(--shadow-glow);
+}
+
+.confirm-buttons button:not(.primary-btn) {
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--slate);
+    border-color: var(--border-medium);
+}
+
+.confirm-buttons button:not(.primary-btn):hover {
+    border-color: var(--primary-rose);
+    color: var(--primary-rose);
+    transform: translateY(-2px);
+    background: white;
+    box-shadow: var(--shadow-soft);
+}
+
+/* ========================================
+   STEP NAVIGATION
+======================================== */
+.step-navigation {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 30px;
+    flex-wrap: wrap;
+}
+
+.step-navigation button {
+    padding: 12px 24px;
+    border: 2px solid var(--border-medium);
+    border-radius: 50px;
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--slate);
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    font-size: 14px;
+}
+
+.step-navigation button:hover {
+    border-color: var(--primary-rose);
+    color: var(--primary-rose);
+    transform: translateY(-2px);
+    background: white;
+    box-shadow: var(--shadow-soft);
+}
+
+/* ========================================
+   PALDIES ZIŅOJUMS
+======================================== */
 .thank-you-message {
     text-align: center;
-    padding: 60px 20px;
-    background: linear-gradient(135deg, #d4edda, #c3e6cb);
-    border-radius: 20px;
-    margin: 30px 0;
+    background: var(--card-gradient);
+    border-radius: 24px;
+    padding: 50px 40px;
+    border: 2px solid var(--success);
+    box-shadow: var(--shadow-medium);
+    max-width: 600px;
+    margin: 0 auto;
 }
 
 .thank-you-message h2 {
-    color: #155724;
+    color: var(--success);
+    font-size: 36px;
+    font-weight: 700;
     margin-bottom: 20px;
-    font-size: 32px;
 }
 
 .thank-you-message p {
-    color: #155724;
+    color: var(--charcoal);
     font-size: 18px;
-    margin: 10px 0;
-    font-weight: 500;
+    margin-bottom: 15px;
+    line-height: 1.6;
 }
 
+.thank-you-message .primary-btn {
+    margin-top: 25px;
+    padding: 16px 32px;
+    font-size: 16px;
+}
+
+/* ========================================
+   ANIMĀCIJAS
+======================================== */
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
 }
 
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 @keyframes modalSlideIn {
     from {
         opacity: 0;
-        transform: scale(0.9) translateY(-20px);
+        transform: scale(0.8) translateY(-50px);
     }
     to {
         opacity: 1;
@@ -675,104 +1089,290 @@ body.modal-open .container {
     }
 }
 
-@media (max-width: 768px) {
-    .container {
-        margin: 10px;
-        border-radius: 15px;
-    }
-    
-    .step, .auth-form, #user-bookings {
-        padding: 40px 20px 20px 20px;
-    }
-    
-    .auth-buttons {
-        position: static;
-        justify-content: center;
-        margin: 20px;
-        top: auto;
-        right: auto;
-    }
-    
-    .step h2 {
-        font-size: 24px;
-        margin-bottom: 25px;
-    }
-    
-    #calendar {
-        padding: 20px;
-    }
-    
-    .calendar-day {
-        padding: 10px 5px;
-        font-size: 14px;
-    }
-    
+/* ========================================
+   POGAS
+======================================== */
+button {
+    font-family: inherit;
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
+    border-radius: 50px;
+    padding: 12px 24px;
+    font-weight: 600;
+    transition: var(--transition-smooth);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.primary-btn {
+    background: var(--button-gradient);
+    color: white;
+    box-shadow: var(--shadow-soft);
+}
+
+.primary-btn:hover {
+    background: var(--accent-gradient);
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: var(--shadow-glow);
+}
+
+/* ========================================
+   RESPONSĪVS DIZAINS
+======================================== */
+
+/* Large screens - 3 columns */
+@media (min-width: 1024px) {
     #services-list {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 30px;
+    }
+    
+    .service-option {
+        min-height: 240px;
+        padding: 35px;
     }
     
     #time-slots {
-        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-        gap: 10px;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 20px;
+    }
+}
+
+/* Medium screens - 2 columns */
+@media (min-width: 768px) and (max-width: 1023px) {
+    #services-list {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 24px;
     }
     
-    .confirm-buttons {
+    .service-option {
+        min-height: 220px;
+    }
+    
+    #time-slots {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    }
+}
+
+/* Small screens - 1 column */
+@media (max-width: 767px) {
+    .container {
+        padding: 15px;
+    }
+    
+    .auth-buttons {
+        top: 15px;
+        right: 15px;
         flex-direction: column;
+        align-items: flex-end;
+    }
+    
+    .auth-form-content {
+        padding: 30px 24px;
+        margin: 20px;
+        max-width: 95%;
+        border-radius: 20px;
+    }
+    
+    .auth-form h2 {
+        font-size: 24px;
+        margin-bottom: 25px;
     }
     
     .form-buttons {
         flex-direction: column;
     }
     
+    .form-buttons button {
+        min-width: auto;
+    }
+    
+    .step {
+        padding: 40px 20px;
+    }
+    
+    .step h2 {
+        font-size: 26px;
+        margin-bottom: 30px;
+    }
+    
+    #calendar {
+        padding: 20px;
+        border-radius: 16px;
+    }
+    
+    #services-list {
+        grid-template-columns: 1fr;
+        gap: 20px;
+        padding: 15px;
+    }
+    
+    .service-option {
+        min-height: 200px;
+        padding: 24px;
+        border-radius: 16px;
+    }
+    
+    .service-option h4 {
+        font-size: 20px;
+        margin-bottom: 14px;
+    }
+    
+    .service-option p {
+        font-size: 15px;
+        margin-bottom: 10px;
+    }
+    
+    .service-option button {
+        padding: 12px 20px;
+        font-size: 14px;
+    }
+    
+    #time-slots {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 12px;
+    }
+    
+    .time-slot {
+        padding: 12px 16px;
+        font-size: 14px;
+    }
+    
     .booking-buttons {
         flex-direction: column;
     }
     
-    .auth-form-content {
-        padding: 30px 20px;
-        margin: 20px;
-        max-width: 95%;
+    .confirm-buttons {
+        flex-direction: column;
     }
     
-    body.modal-open .container {
-        opacity: 0.98;
+    .confirm-buttons button {
+        min-width: auto;
+    }
+    
+    .step-navigation {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .thank-you-message {
+        padding: 35px 25px;
+    }
+    
+    .thank-you-message h2 {
+        font-size: 28px;
+    }
+    
+    .thank-you-message p {
+        font-size: 16px;
     }
 }
 
 @media (max-width: 480px) {
-    body {
-        padding: 10px;
-    }
-    
-    .step h2 {
-        font-size: 20px;
-    }
-    
-    .calendar-day {
-        padding: 8px 4px;
-        font-size: 12px;
-    }
-    
-    #time-slots {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    
     .auth-form-content {
-        padding: 25px 15px;
-        margin: 10px;
+        padding: 24px 20px;
+        margin: 15px;
     }
     
     .auth-form h2 {
-        font-size: 20px;
+        font-size: 22px;
     }
     
-    body.modal-open .container {
-        opacity: 1;
+    .form-group input,
+    .form-group textarea {
+        padding: 14px 16px;
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+    
+    .step h2 {
+        font-size: 22px;
+    }
+    
+    .booking {
+        padding: 20px;
+        border-radius: 16px;
+    }
+    
+    #services-list {
+        padding: 10px;
+        gap: 16px;
+    }
+    
+    .service-option {
+        padding: 20px;
+        min-height: 180px;
+    }
+    
+    .service-option h4 {
+        font-size: 18px;
+    }
+    
+    .service-option p {
+        font-size: 14px;
+    }
+    
+    #time-slots {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 10px;
+    }
+    
+    .time-slot {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+    
+    .thank-you-message {
+        padding: 30px 20px;
+    }
+    
+    .thank-you-message h2 {
+        font-size: 24px;
+    }
+    
+    .thank-you-message p {
+        font-size: 15px;
     }
 }
 
+/* ========================================
+   DEBUG HELPERS (var noņemt produkcijā)
+======================================== */
+.debug-modal-state {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 10px;
+    font-size: 12px;
+    z-index: 9999;
+    border-radius: 4px;
+    font-family: monospace;
+}
+
+/* ========================================
+   UTILITY CLASSES
+======================================== */
 .hidden {
     display: none !important;
-    visibility: hidden !important;
-    opacity: 0 !important;
+}
+
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.selected {
+    background: var(--primary-light) !important;
+    border-color: var(--primary-rose) !important;
+    color: var(--primary-deep) !important;
+}
+
+.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+    cursor: not-allowed !important;
 }
